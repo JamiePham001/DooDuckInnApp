@@ -1,0 +1,6 @@
+@DooDuckInn.Api_HostAddress = http://localhost:5010
+
+GET {{DooDuckInn.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
