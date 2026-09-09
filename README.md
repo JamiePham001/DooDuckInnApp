@@ -18,6 +18,9 @@ A business mobile application striving to help my dad become self sufficient in 
 - CI / CD: GitHub Actions
 
 ## What I Learned
+- Clean Architecture
+- Fluent API
+  - Configuring models
 
 ## What I Can Improve On
 

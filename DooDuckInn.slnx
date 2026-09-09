@@ -1,8 +1,6 @@
 <Solution>
   <Folder Name="/backend/">
-    <Project Path="backend/DooDuckInn.Api/DooDuckInn.Api.csproj"/>
-    <Project Path="backend/DooDuckInn.Domain/DooDuckInn.Domain.csproj"/>
-    <Project Path="backend/DooDuckInn.Infrastructure/DooDuckInn.Infrastructure.csproj"/>
-    <Project Path="backend/DooDuckInn.Application/DooDuckInn.Application.csproj"/>
+    <Project Path="backend/DooDuckInn/DooDuckInn.csproj"/>
+    <Project Path="backend/DooDuckInn.Tests/DooDuckInn.Tests.csproj"/>
   </Folder>
 </Solution>

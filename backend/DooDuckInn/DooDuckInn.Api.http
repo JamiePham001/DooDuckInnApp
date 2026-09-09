@@ -1,0 +1,68 @@
+@rootUrl = http://localhost:5010
+
+### Create a user
+POST {{rootUrl}}/api/users
+Content-Type: application/json
+
+{
+  "cognitoSub": "test-sub-123"
+}
+
+### Fetch all users
+GET {{rootUrl}}/api/users
+Accept: application/json
+
+### Fetch a user by id (replace 1 with the id from the create response above)
+GET {{rootUrl}}/api/users/1
+Accept: application/json
+
+### Update a user's email
+PATCH {{rootUrl}}/api/users/1/email
+Content-Type: application/json
+
+{
+  "email": "dad@example.com"
+}
+
+### Create a tax report (replace userId with an id from the user requests above)
+POST {{rootUrl}}/api/users/1/taxes
+Content-Type: application/json
+
+{
+  "dateStart": "2026-07-01",
+  "dateEnd": "2026-09-30"
+}
+
+### Fetch all tax reports
+GET {{rootUrl}}/api/taxes
+Accept: application/json
+
+### Fetch tax report my user id
+GET {{rootUrl}}/api/users/1/taxes
+Accept: application/json
+
+### Fetch a tax report by id (replace 1 with the id from the create response above)
+GET {{rootUrl}}/api/taxes/1
+Accept: application/json
+
+### Fetch a tax report for a nonexistent id (expect 404)
+GET {{rootUrl}}/api/taxes/999
+Accept: application/json
+
+### Update a tax report's dates
+PATCH {{rootUrl}}/api/taxes/1/update/dates
+Content-Type: application/json
+
+{
+  "dateStart": "2026-10-01",
+  "dateEnd": "2026-12-31"
+}
+
+### Update dates for a nonexistent tax report (expect 404)
+PATCH {{rootUrl}}/api/taxes/999/update/dates
+Content-Type: application/json
+
+{
+  "dateStart": "2026-10-01",
+  "dateEnd": "2026-12-31"
+}
