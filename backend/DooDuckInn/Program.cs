@@ -10,10 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Registers AppDbContext for dependency injection (that's why endpoints below can just take an
-// `AppDbContext db` parameter and have it handed to them). UseInMemoryDatabase means nothing is
-// actually persisted to Postgres yet — it's a fake in-process store for testing model behavior.
-// Swap this one line for `.UseNpgsql(connectionString)` when you're ready to hit real Neon Postgres.
-builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("DooDuckInn"));
+// `AppDbContext db` parameter and have it handed to them). Skipped under the "Testing" environment
+// so CustomWebApplicationFactory can register InMemory instead — registering Npgsql here first
+// makes EF Core see two database providers in the same service provider and throw.
+// Set locally via `dotnet user-secrets set ConnectionStrings:DooDuckInn "..."` (see .env.local for the Neon URL).
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    var connectionString = builder.Configuration.GetConnectionString("DooDuckInn");
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+}
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

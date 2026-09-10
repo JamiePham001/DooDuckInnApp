@@ -42,8 +42,8 @@ ITEM
   name          (NOT_NULL, Varchar(150))
   quantity      (NOT_NULL, Integer, DEFAULT 0, CHECK >= 0)
 
-GST
-  gst_id        (PK, NOT_NULL, Integer)
+TAX
+  tax_id        (PK, NOT_NULL, Integer)
   user_id       (FK, NOT_NULL, Integer)
   start_date    (NOT_NULL, Date)
   end_date      (NOT_NULL, Date, CHECK > start_date)
@@ -51,16 +51,9 @@ GST
 
 TRANSACTION
   transaction_id (PK, NOT_NULL, Integer)
-  gst_id         (FK, NOT_NULL, Integer)
+  tax_id         (FK, NOT_NULL, Integer)
   name           (NOT_NULL, Varchar(150))
   amount         (NOT_NULL, Double, DEFAULT 0)
   gst            (NOT_NULL, Double)
   type           (NOT_NULL, Integer, CHECK IN (0=Sale, 1=Purchase))
 ```
-
-Relationships:
-
-- USER has SUPPLIER (one-to-many)
-- SUPPLIER supplies ITEM (one-to-many)
-- USER has GST (one-to-many)
-- GST records TRANSACTION (one-to-many)
