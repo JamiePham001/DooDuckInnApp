@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using DooDuckInn.src.users;
 using DooDuckInn.src.suppliers;
 using DooDuckInn.src.taxes;
+using DooDuckInn.src.items;
+using DooDuckInn.src.transactions;
 
 namespace DooDuckInn.src.db;
 
@@ -12,6 +14,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Tax> Taxes => Set<Tax>();
+    public DbSet<Item> Items => Set<Item>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     // Scans this assembly for every IEntityTypeConfiguration<T> (UserConfiguration, and any
     // SupplierConfiguration/TaxConfiguration added later) and applies them automatically.

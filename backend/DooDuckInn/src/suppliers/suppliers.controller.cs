@@ -1,10 +1,14 @@
+using DooDuckInn.src.items;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DooDuckInn.src.suppliers;
 
 [ApiController]
 [Route("api/suppliers")]
-public class SuppliersController(SuppliersService suppliers) : ControllerBase
+public class SuppliersController(
+    SuppliersService suppliers,
+    ItemsService items
+    ) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -21,6 +25,21 @@ public class SuppliersController(SuppliersService suppliers) : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPost("{supplierId:int}/item")]
+    public async Task<IActionResult> CreateItem(int supplierId, ItemRequest req)
+    {
+        try
+        {
+            var item = await items.CreateAsync(supplierId, req);
+            return CreatedAtAction(nameof(CreateItem), new { id = item.Id }, item);
+        }
+        catch (KeyNotFoundException ex)
+        {
+
             return NotFound(ex.Message);
         }
     }

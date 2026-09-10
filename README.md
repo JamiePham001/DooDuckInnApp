@@ -18,9 +18,6 @@ A business mobile application striving to help my dad become self sufficient in 
 - CI / CD: GitHub Actions
 
 ## What I Learned
-- Clean Architecture
-- Fluent API
-  - Configuring models
 
 ## What I Can Improve On
 
@@ -30,48 +27,40 @@ A business mobile application striving to help my dad become self sufficient in 
 USER
   user_id       (PK, NOT_NULL, Integer)
   cognito_sub   (NOT_NULL, UNIQUE, Varchar(150))
-  email         (NOT_NULL, UNIQUE, Varchar(150))
-  phone         (NULL, Varchar(20))
-  abn           (NOT_NULL, Varchar(11))
+  email         (NOT_NULL, Varchar(150))
 
 SUPPLIER
   supplier_id   (PK, NOT_NULL, Integer)
   user_id       (FK, NOT_NULL, Integer)
-  supplier_name (NOT_NULL, Varchar(150))
-  email         (NOT_NULL, Varchar(150))
-  phone         (NULL, Varchar(20))
-  address       (NULL, Varchar(255))
+  name          (NULL, Varchar(150))
+  email         (NULL, Varchar(100))
+  phone         (NULL, Varchar(15))
 
 ITEM
   item_id       (PK, NOT_NULL, Integer)
   supplier_id   (FK, NOT_NULL, Integer)
   name          (NOT_NULL, Varchar(150))
-  qty           (NULL, Integer)
-  unit_price    (NULL, Decimal(10,2))
-  unit          (NULL, Varchar(20))
+  quantity      (NOT_NULL, Integer, DEFAULT 0, CHECK >= 0)
 
 GST
   gst_id        (PK, NOT_NULL, Integer)
   user_id       (FK, NOT_NULL, Integer)
   start_date    (NOT_NULL, Date)
-  end_date      (NOT_NULL, Date)
-  status        (NULL, Varchar(30))
+  end_date      (NOT_NULL, Date, CHECK > start_date)
+  UNIQUE(user_id, start_date, end_date)
 
-SALES
-  sales_id      (PK, NOT_NULL, Integer)
-  gst_id        (FK, NOT_NULL, Integer)
-  name          (NOT_NULL, Varchar(100))
-  amount        (NOT_NULL, Decimal(12,2))
-  gst           (NOT_NULL, Decimal(12,2), DEFAULT 0)
-  is_verified   (NOT_NULL, Boolean, DEFAULT false)
-
-PURCHASE
-  purchase_id   (PK, NOT_NULL, Integer)
-  gst_id        (FK, NOT_NULL, Integer)
-  supplier_id   (FK, NULL, Integer)
-  item_id       (FK, NULL, Integer)
-  name          (NOT_NULL, Varchar(100))
-  amount        (NOT_NULL, Decimal(12,2))
-  gst           (NOT_NULL, Decimal(12,2), DEFAULT 0)
-  is_verified   (NOT_NULL, Boolean, DEFAULT false)
+TRANSACTION
+  transaction_id (PK, NOT_NULL, Integer)
+  gst_id         (FK, NOT_NULL, Integer)
+  name           (NOT_NULL, Varchar(150))
+  amount         (NOT_NULL, Double, DEFAULT 0)
+  gst            (NOT_NULL, Double)
+  type           (NOT_NULL, Integer, CHECK IN (0=Sale, 1=Purchase))
 ```
+
+Relationships:
+
+- USER has SUPPLIER (one-to-many)
+- SUPPLIER supplies ITEM (one-to-many)
+- USER has GST (one-to-many)
+- GST records TRANSACTION (one-to-many)

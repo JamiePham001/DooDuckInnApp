@@ -3,6 +3,8 @@ using DooDuckInn.src.suppliers;
 using Microsoft.EntityFrameworkCore;
 using DooDuckInn.src.users;
 using DooDuckInn.src.taxes;
+using DooDuckInn.src.items;
+using DooDuckInn.src.transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<TaxesService>();
 builder.Services.AddScoped<SuppliersService>();
+builder.Services.AddScoped<ItemsService>();
+builder.Services.AddScoped<TransactionsService>();
 
 var app = builder.Build();
 

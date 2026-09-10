@@ -1,15 +1,48 @@
 using Microsoft.AspNetCore.Mvc;
+using DooDuckInn.src.transactions;
 
 namespace DooDuckInn.src.taxes;
 
 [ApiController]
 [Route("api/taxes")]
-public class TaxesController(TaxesService taxes) : ControllerBase
+public class TaxesController(TaxesService taxes, TransactionsService transactions) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         return Ok(await taxes.GetAllAsync());
+    }
+
+    [HttpGet("{id}/transactions")]
+    public async Task<IActionResult> GetTransactionsByTaxId(int id)
+    {
+        try
+        {
+            return Ok(await transactions.GetByTaxId(id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/transactions")]
+    public async Task<IActionResult> CreateTransaction(int id, CreateTransactionRequest request)
+    {
+        try
+        {
+            var transaction = await transactions.CreateAsync(id, request);
+            return CreatedAtAction(nameof(TransactionsController.GetById), "Transactions",
+                new { id = transaction.Id }, transaction);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("{id}")]
