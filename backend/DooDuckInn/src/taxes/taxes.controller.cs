@@ -1,12 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using DooDuckInn.src.transactions;
+using DooDuckInn.src.users;
 
 namespace DooDuckInn.src.taxes;
 
 [ApiController]
 [Route("api/taxes")]
-public class TaxesController(TaxesService taxes, TransactionsService transactions) : ControllerBase
+public class TaxesController(
+    TaxesService taxes,
+    TransactionsService transactions,
+    UsersService users
+    ) : ControllerBase
 {
+    private async Task<User> CurrentUserAsync()
+    {
+        var sub = User.FindFirst("sub")?.Value
+            ?? throw new UnauthorizedAccessException();
+
+        return await users.GetBySubAsync(sub);
+    }
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -18,7 +30,8 @@ public class TaxesController(TaxesService taxes, TransactionsService transaction
     {
         try
         {
-            return Ok(await transactions.GetByTaxId(id));
+            var me = CurrentUserAsync();
+            return Ok(await transactions.GetByTaxId(id, me.Id));
         }
         catch (KeyNotFoundException ex)
         {
@@ -31,7 +44,8 @@ public class TaxesController(TaxesService taxes, TransactionsService transaction
     {
         try
         {
-            var transaction = await transactions.CreateAsync(id, request);
+            var me = CurrentUserAsync();
+            var transaction = await transactions.CreateAsync(id, me.Id, request);
             return CreatedAtAction(nameof(TransactionsController.GetById), "Transactions",
                 new { id = transaction.Id }, transaction);
         }

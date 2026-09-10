@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using DooDuckInn.src.taxes;
 using DooDuckInn.src.suppliers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DooDuckInn.src.users;
 
+[Authorize]
 [ApiController]
 [Route("api/users")]
 public class UsersController(
@@ -12,18 +14,26 @@ public class UsersController(
     SuppliersService supplier
     ) : ControllerBase
 {
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    // The "sub" claim is the caller's Cognito identity, proven by the validated JWT — the one
+    // safe source of "who is this", unlike a client-suppliable {id} route param.
+    private async Task<User> CurrentUserAsync()
     {
-        return Ok(await users.GetAllAsync());
+        var sub = User.FindFirst("sub")?.Value
+            ?? throw new UnauthorizedAccessException();
+
+        return await users.GetBySubAsync(sub);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
     {
         try
         {
-            return Ok(await users.GetById(id));
+            return Ok(await CurrentUserAsync());
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (KeyNotFoundException ex)
         {
@@ -31,12 +41,17 @@ public class UsersController(
         }
     }
 
-    [HttpGet("{id}/taxes")]
-    public async Task<IActionResult> GetTaxesbyUserId(int id)
+    [HttpGet("me/taxes")]
+    public async Task<IActionResult> GetMyTaxes()
     {
         try
         {
-            return Ok(await taxes.GetByUserId(id));
+            var me = await CurrentUserAsync();
+            return Ok(await taxes.GetByUserId(me.Id));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (KeyNotFoundException ex)
         {
@@ -44,12 +59,17 @@ public class UsersController(
         }
     }
 
-    [HttpGet("{id}/suppliers")]
-    public async Task<IActionResult> GetSuppliersbyUserId(int id)
+    [HttpGet("me/suppliers")]
+    public async Task<IActionResult> GetMySuppliers()
     {
         try
         {
-            return Ok(await supplier.GetByUserId(id));
+            var me = await CurrentUserAsync();
+            return Ok(await supplier.GetByUserId(me.Id));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (KeyNotFoundException ex)
         {
@@ -57,13 +77,19 @@ public class UsersController(
         }
     }
 
+    // Called right after Cognito sign-up: the caller already has a valid JWT (so [Authorize]
+    // passes) but no local User row yet. The sub comes from the token, never the request body,
+    // so nobody can create a row claiming someone else's identity.
     [HttpPost]
-    public async Task<IActionResult> Create(CreateUserRequest request)
+    public async Task<IActionResult> Create()
     {
+        var sub = User.FindFirst("sub")?.Value;
+        if (sub is null) return Unauthorized();
+
         try
         {
-            var user = await users.CreateAsync(request.CognitoSub);
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+            var user = await users.CreateAsync(sub);
+            return CreatedAtAction(nameof(GetMe), user);
         }
         catch (ArgumentException ex)
         {
@@ -71,13 +97,18 @@ public class UsersController(
         }
     }
 
-    [HttpPost("{id}/taxes")]
-    public async Task<IActionResult> CreateTax(int id, TaxRequest request)
+    [HttpPost("me/taxes")]
+    public async Task<IActionResult> CreateTax(TaxRequest request)
     {
         try
         {
-            var tax = await taxes.CreateAsync(id, request);
-            return CreatedAtAction(nameof(GetById), new { id = tax.Id }, tax);
+            var me = await CurrentUserAsync();
+            var tax = await taxes.CreateAsync(me.Id, request);
+            return CreatedAtAction(nameof(GetMyTaxes), tax);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (KeyNotFoundException ex)
         {
@@ -89,13 +120,18 @@ public class UsersController(
         }
     }
 
-    [HttpPost("{id}/suppliers")]
-    public async Task<IActionResult> CreateSupplier(int id, SupplierRequest request)
+    [HttpPost("me/suppliers")]
+    public async Task<IActionResult> CreateSupplier(SupplierRequest request)
     {
         try
         {
-            var res = await supplier.CreateAsync(id, request);
-            return CreatedAtAction(nameof(GetById), new { id = res.Id }, res);
+            var me = await CurrentUserAsync();
+            var res = await supplier.CreateAsync(me.Id, request);
+            return CreatedAtAction(nameof(GetMySuppliers), res);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (KeyNotFoundException ex)
         {
@@ -107,10 +143,22 @@ public class UsersController(
         }
     }
 
-    [HttpPatch("{id}/email")]
-    public async Task<IActionResult> UpdateEmail(int id, UpdateEmailRequest request)
+    [HttpPatch("me/email")]
+    public async Task<IActionResult> UpdateEmail(UpdateEmailRequest request)
     {
-        var updated = await users.UpdateEmailAsync(id, request);
-        return updated ? NoContent() : NotFound($"User {id} not found");
+        try
+        {
+            var me = await CurrentUserAsync();
+            var updated = await users.UpdateEmailAsync(me.Id, request);
+            return updated ? NoContent() : NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

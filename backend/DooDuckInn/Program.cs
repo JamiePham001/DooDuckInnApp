@@ -5,10 +5,24 @@ using DooDuckInn.src.users;
 using DooDuckInn.src.taxes;
 using DooDuckInn.src.items;
 using DooDuckInn.src.transactions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Cognito:Authority"];
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Cognito:ClientId"],
+        };
+    });
+builder.Services.AddAuthorization();
 // Registers AppDbContext for dependency injection (that's why endpoints below can just take an
 // `AppDbContext db` parameter and have it handed to them). Skipped under the "Testing" environment
 // so CustomWebApplicationFactory can register InMemory instead — registering Npgsql here first
@@ -16,7 +30,7 @@ builder.Services.AddControllers();
 // Set locally via `dotnet user-secrets set ConnectionStrings:DooDuckInn "..."` (see .env.local for the Neon URL).
 if (!builder.Environment.IsEnvironment("Testing"))
 {
-    var connectionString = builder.Configuration.GetConnectionString("DooDuckInn");
+    var connectionString = builder.Configuration["ConnectionString:DooDuckInn"];
     builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 }
 
@@ -31,6 +45,9 @@ builder.Services.AddScoped<ItemsService>();
 builder.Services.AddScoped<TransactionsService>();
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

@@ -1,27 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using DooDuckInn.src.users;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DooDuckInn.src.transactions;
 
+[Authorize]
 [ApiController]
 [Route("api/transactions")]
-public class TransactionsController(TransactionsService transactions) : ControllerBase
+public class TransactionsController(
+    TransactionsService transactions,
+    UsersService users
+    ) : ControllerBase
 {
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private async Task<User> CurrentUserAsync()
     {
-        return Ok(await transactions.GetAllAsync());
-    }
+        var sub = User.FindFirst("sub")?.Value
+            ?? throw new UnauthorizedAccessException();
 
-    [HttpGet("sales")]
-    public async Task<IActionResult> GetSales()
-    {
-        return Ok(await transactions.GetSalesAsync());
-    }
-
-    [HttpGet("purchases")]
-    public async Task<IActionResult> GetPurchases()
-    {
-        return Ok(await transactions.GetPurchasesAsync());
+        return await users.GetBySubAsync(sub);
     }
 
     [HttpGet("{id}")]
@@ -29,7 +25,8 @@ public class TransactionsController(TransactionsService transactions) : Controll
     {
         try
         {
-            return Ok(await transactions.GetById(id));
+            var me = await CurrentUserAsync();
+            return Ok(await transactions.GetById(id, me.Id));
         }
         catch (KeyNotFoundException ex)
         {
@@ -42,10 +39,15 @@ public class TransactionsController(TransactionsService transactions) : Controll
     {
         try
         {
-            var updated = await transactions.UpdateNameAsync(id, name);
+            var me = await CurrentUserAsync();
+            var updated = await transactions.UpdateNameAsync(id, me.Id, name);
             return updated ? NoContent() : NotFound($"Transaction {id} not found");
         }
         catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -56,10 +58,15 @@ public class TransactionsController(TransactionsService transactions) : Controll
     {
         try
         {
-            var updated = await transactions.UpdateAmountAsync(id, amount);
+            var me = await CurrentUserAsync();
+            var updated = await transactions.UpdateAmountAsync(id, me.Id, amount);
             return updated ? NoContent() : NotFound($"Transaction {id} not found");
         }
         catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -70,10 +77,15 @@ public class TransactionsController(TransactionsService transactions) : Controll
     {
         try
         {
-            var updated = await transactions.UpdateGstAsync(id, gst);
+            var me = await CurrentUserAsync();
+            var updated = await transactions.UpdateGstAsync(id, me.Id, gst);
             return updated ? NoContent() : NotFound($"Transaction {id} not found");
         }
         catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -82,7 +94,16 @@ public class TransactionsController(TransactionsService transactions) : Controll
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await transactions.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound($"Transaction {id} not found");
+        try
+        {
+            var me = await CurrentUserAsync();
+            var deleted = await transactions.DeleteAsync(id, me.Id);
+            return deleted ? NoContent() : NotFound($"Transaction {id} not found");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
     }
 }

@@ -5,17 +5,21 @@ namespace DooDuckInn.src.users;
 
 public class UsersService(AppDbContext db)
 {
-    public Task<List<User>> GetAllAsync()
-    {
-        return db.Users.ToListAsync();
-    }
-
 
     public async Task<User> GetById(int id)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
         if (user is null) throw new KeyNotFoundException($"User {id} not found");
+
+        return user;
+    }
+
+    public async Task<User> GetBySubAsync(string sub)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.CognitoSub == sub);
+
+        if (user is null) throw new KeyNotFoundException("User not found");
 
         return user;
     }

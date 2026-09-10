@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DooDuckInn.src.items;
 
+[Authorize]
 [ApiController]
 [Route("api/items")]
 public class ItemController (ItemsService items) : ControllerBase
