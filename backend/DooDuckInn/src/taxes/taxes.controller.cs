@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using DooDuckInn.src.transactions;
 using DooDuckInn.src.users;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DooDuckInn.src.taxes;
 
+[Authorize]
 [ApiController]
 [Route("api/taxes")]
 public class TaxesController(
@@ -19,18 +21,13 @@ public class TaxesController(
 
         return await users.GetBySubAsync(sub);
     }
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        return Ok(await taxes.GetAllAsync());
-    }
 
     [HttpGet("{id}/transactions")]
     public async Task<IActionResult> GetTransactionsByTaxId(int id)
     {
         try
         {
-            var me = CurrentUserAsync();
+            var me = await CurrentUserAsync();
             return Ok(await transactions.GetByTaxId(id, me.Id));
         }
         catch (KeyNotFoundException ex)
@@ -44,7 +41,7 @@ public class TaxesController(
     {
         try
         {
-            var me = CurrentUserAsync();
+            var me = await CurrentUserAsync();
             var transaction = await transactions.CreateAsync(id, me.Id, request);
             return CreatedAtAction(nameof(TransactionsController.GetById), "Transactions",
                 new { id = transaction.Id }, transaction);
@@ -64,7 +61,8 @@ public class TaxesController(
     {
         try
         {
-            return Ok(await taxes.GetById(id));
+            var me = await CurrentUserAsync();
+            return Ok(await taxes.GetById(id, me.Id));
         }
         catch (KeyNotFoundException ex)
         {
@@ -77,8 +75,13 @@ public class TaxesController(
     {
         try
         {
-            var updated = await taxes.UpdateDatesAsync(id, request);
+            var me = await CurrentUserAsync();
+            var updated = await taxes.UpdateDatesAsync(id, me.Id, request);
             return updated ? NoContent() : NotFound($"Tax report {id} not found");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (ArgumentException ex)
         {
@@ -89,7 +92,15 @@ public class TaxesController(
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await taxes.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound($"Tax report {id} not found");
+        try
+        {
+            var me = await CurrentUserAsync();
+            var deleted = await taxes.DeleteAsync(id, me.Id);
+            return deleted ? NoContent() : NotFound($"Tax report {id} not found");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

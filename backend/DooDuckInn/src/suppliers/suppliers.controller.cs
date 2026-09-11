@@ -23,18 +23,13 @@ public class SuppliersController(
         return await users.GetBySubAsync(sub);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        return Ok(await suppliers.GetAllAsync());
-    }
-
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         try
         {
-            return Ok(await suppliers.GetById(id));
+            var me = await CurrentUserAsync();
+            return Ok(await suppliers.GetById(id, me.Id));
         }
         catch (KeyNotFoundException ex)
         {
@@ -53,7 +48,6 @@ public class SuppliersController(
         }
         catch (KeyNotFoundException ex)
         {
-
             return NotFound(ex.Message);
         }
     }
@@ -61,14 +55,31 @@ public class SuppliersController(
     [HttpPatch("{id}/update/details")]
     public async Task<IActionResult> UpdateDetails(int id, SupplierRequest request)
     {
-        var updated = await suppliers.UpdateDetailsAsync(id, request);
-        return updated ? NoContent() : NotFound($"Supplier {id} not found");
+        try
+        {
+            var me = await CurrentUserAsync();
+            var updated = await suppliers.UpdateDetailsAsync(id, me.Id, request);
+            return updated ? NoContent() : NotFound($"Supplier {id} not found");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await suppliers.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound($"SUppliers {id} not found");
+        try
+        {
+            var me = await CurrentUserAsync();
+            var deleted = await suppliers.DeleteAsync(id, me.Id);
+            return deleted ? NoContent() : NotFound($"SUppliers {id} not found");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 }

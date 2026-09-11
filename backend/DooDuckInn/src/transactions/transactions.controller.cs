@@ -45,11 +45,11 @@ public class TransactionsController(
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
     }
 
@@ -64,11 +64,11 @@ public class TransactionsController(
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
     }
 
@@ -83,11 +83,11 @@ public class TransactionsController(
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
     }
 
@@ -102,7 +102,7 @@ public class TransactionsController(
         }
         catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
 
     }

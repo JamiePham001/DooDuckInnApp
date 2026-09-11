@@ -1,3 +1,7 @@
 {
-  "dotnet.defaultSolution": "DooDuckInn.slnx"
+  "dotnet.defaultSolution": "DooDuckInn.slnx",
+  "editor.formatOnSave": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
+  }
 }
