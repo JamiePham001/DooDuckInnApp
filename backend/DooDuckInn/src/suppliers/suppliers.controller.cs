@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using DooDuckInn.src.email;
 using DooDuckInn.src.items;
 using DooDuckInn.src.users;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +14,8 @@ namespace DooDuckInn.src.suppliers;
 public class SuppliersController(
     SuppliersService suppliers,
     ItemsService items,
-    UsersService users
+    UsersService users,
+    EmailService email
 
     ) : ControllerBase
 {
@@ -45,6 +49,27 @@ public class SuppliersController(
             var me = await CurrentUserAsync();
             var item = await items.CreateAsync(supplierId, me.Id, req);
             return CreatedAtAction(nameof(CreateItem), new { id = item.Id }, item);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/send-order")]
+    public async Task<IActionResult> SendOrder(int id, SendOrderRequest request)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var supplierItems = await items.GetBySupplierId(id, me.Id);
+
+            await email.SendAsync(request.RecipientEmail,
+                "Doo Duck Inn — Delivery Order",
+                OrderEmail.BuildText(request.date, supplierItems),
+                htmlBody: OrderEmail.BuildHtml(request.date, supplierItems));
+
+            return NoContent();
         }
         catch (KeyNotFoundException ex)
         {

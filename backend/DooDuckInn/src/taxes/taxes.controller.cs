@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using DooDuckInn.src.transactions;
 using DooDuckInn.src.users;
+using DooDuckInn.src.email;
 using Microsoft.AspNetCore.Authorization;
+using QuestPDF.Fluent;
 
 namespace DooDuckInn.src.taxes;
 
@@ -11,7 +13,8 @@ namespace DooDuckInn.src.taxes;
 public class TaxesController(
     TaxesService taxes,
     TransactionsService transactions,
-    UsersService users
+    UsersService users,
+    EmailService email
     ) : ControllerBase
 {
     private async Task<User> CurrentUserAsync()
@@ -86,6 +89,33 @@ public class TaxesController(
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}/send-report")]
+    public async Task<IActionResult> SendReport(int id, SendReportRequest request)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var tax = await taxes.GetById(id, me.Id);
+            var taxTransactions = await transactions.GetByTaxId(id, me.Id);
+
+            var pdf = new TaxReportDocument(tax, [.. taxTransactions]).GeneratePdf();
+            var attachment = new EmailAttachment("gst-report.pdf", pdf, "application/pdf");
+
+            await email.SendAsync(
+                request.RecipientEmail,
+                $"GST Report — {tax.StartDate:MMMM yyyy} to {tax.EndDate:MMMM yyyy}",
+                "Please find the attached GST report.",
+                attachment);
+
+            await taxes.MarkSentAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
     }
 

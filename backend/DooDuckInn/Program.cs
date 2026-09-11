@@ -5,8 +5,10 @@ using DooDuckInn.src.users;
 using DooDuckInn.src.taxes;
 using DooDuckInn.src.items;
 using DooDuckInn.src.transactions;
+using DooDuckInn.src.email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,11 +40,14 @@ if (!builder.Environment.IsEnvironment("Testing"))
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+QuestPDF.Settings.License = LicenseType.Professional;
+
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<TaxesService>();
 builder.Services.AddScoped<SuppliersService>();
 builder.Services.AddScoped<ItemsService>();
 builder.Services.AddScoped<TransactionsService>();
+builder.Services.AddScoped<EmailService>();
 
 var app = builder.Build();
 
