@@ -6,6 +6,7 @@ public sealed class Tax
     public int UserId {get; private set;}
     public DateOnly StartDate { get; private set; }
     public DateOnly EndDate { get; private set; }
+    public bool IsSent { get; private set; }
 
     private Tax() { }  // for EF Core materialization
 
@@ -24,6 +25,11 @@ public sealed class Tax
 
         StartDate = startDate;
         EndDate = endDate;
+    }
+
+    public void MarkSent()
+    {
+        IsSent = true;
     }
 
     private static void ValidateDateRange(DateOnly startDate, DateOnly endDate)

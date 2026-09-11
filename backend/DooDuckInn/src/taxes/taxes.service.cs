@@ -38,6 +38,17 @@ public class TaxesService(AppDbContext db)
         return true;
     }
 
+    // Called by the report pipeline only after SES confirms the email actually sent —
+    // never from a client-facing endpoint, so there's no jwtUserId to check against here.
+    public async Task MarkSentAsync(int taxId)
+    {
+        var tax = await db.Taxes.FindAsync(taxId)
+            ?? throw new KeyNotFoundException($"Tax report {taxId} not found.");
+
+        tax.MarkSent();
+        await db.SaveChangesAsync();
+    }
+
     public async Task<bool> DeleteAsync(int taxId, int jwtUserId)
     {
         var tax = await db.Taxes.FindAsync(taxId);

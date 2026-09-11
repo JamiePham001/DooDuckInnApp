@@ -19,6 +19,8 @@ A business mobile application striving to help my dad become self sufficient in 
 
 ## What I Learned
 
+- Writing OOP code
+
 ## What I Can Improve On
 
 ## Relational Model
@@ -47,6 +49,7 @@ TAX
   user_id       (FK, NOT_NULL, Integer)
   start_date    (NOT_NULL, Date)
   end_date      (NOT_NULL, Date, CHECK > start_date)
+  is_sent       (NOT_NULL, Boolean, DEFAULT false)
   UNIQUE(user_id, start_date, end_date)
 
 TRANSACTION

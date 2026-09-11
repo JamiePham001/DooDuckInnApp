@@ -13,7 +13,7 @@ Making use of AI Workflows:
 
 - image and form processing
 - produce report documents
-- quarter summary
+- quarter analysis
 - automate emails
 
 ## General
@@ -61,6 +61,7 @@ TAX
   user_id       (FK, NOT_NULL, Integer)
   start_date    (NOT_NULL, Date)
   end_date      (NOT_NULL, Date, CHECK > start_date)
+  is_sent       (NOT_NULL, Boolean, DEFAULT false)
 
 TRANSACTION
   transaction_id (PK, NOT_NULL, Integer)

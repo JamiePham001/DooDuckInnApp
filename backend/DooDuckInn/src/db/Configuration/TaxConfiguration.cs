@@ -24,6 +24,8 @@ public class TaxConfiguration : IEntityTypeConfiguration<Tax>
         builder.HasIndex(t => new { t.UserId, t.StartDate, t.EndDate })
             .IsUnique();
 
+        builder.Property(t => t.IsSent).HasDefaultValue(false);
+
         // Postgres rejects any row where EndDate <= StartDate.
         builder.ToTable(tb => tb.HasCheckConstraint(
             "CK_Tax_EndDate_After_StartDate",
