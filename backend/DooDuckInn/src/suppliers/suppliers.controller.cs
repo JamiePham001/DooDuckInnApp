@@ -1,15 +1,28 @@
 using DooDuckInn.src.items;
+using DooDuckInn.src.users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DooDuckInn.src.suppliers;
 
+[Authorize]
 [ApiController]
 [Route("api/suppliers")]
 public class SuppliersController(
     SuppliersService suppliers,
-    ItemsService items
+    ItemsService items,
+    UsersService users
+
     ) : ControllerBase
 {
+    private async Task<User> CurrentUserAsync()
+    {
+        var sub = User.FindFirst("sub")?.Value
+            ?? throw new UnauthorizedAccessException();
+
+        return await users.GetBySubAsync(sub);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -34,7 +47,8 @@ public class SuppliersController(
     {
         try
         {
-            var item = await items.CreateAsync(supplierId, req);
+            var me = await CurrentUserAsync();
+            var item = await items.CreateAsync(supplierId, me.Id, req);
             return CreatedAtAction(nameof(CreateItem), new { id = item.Id }, item);
         }
         catch (KeyNotFoundException ex)

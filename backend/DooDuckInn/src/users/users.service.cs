@@ -5,7 +5,6 @@ namespace DooDuckInn.src.users;
 
 public class UsersService(AppDbContext db)
 {
-
     public async Task<User> GetById(int id)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);

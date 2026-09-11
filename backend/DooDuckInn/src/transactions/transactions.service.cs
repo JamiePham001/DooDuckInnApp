@@ -34,9 +34,11 @@ public class TransactionsService(AppDbContext db)
 
     public async Task<Transaction> CreateAsync(int taxId, int userId, CreateTransactionRequest req)
     {
-        var transaction = new Transaction(taxId, req.name, req.amount, req.gst, req.type);
-        await CheckTransUserId(transaction.TaxId, userId);
+        var tax = await db.Taxes.FindAsync(taxId);
+        if (tax is null) throw new KeyNotFoundException($"Tax {taxId} not found.");
+        await CheckTransUserId(tax.Id, userId);
 
+        var transaction = new Transaction(taxId, req.name, req.amount, req.gst, req.type);
         db.Transactions.Add(transaction);
         await db.SaveChangesAsync();
         return transaction;
