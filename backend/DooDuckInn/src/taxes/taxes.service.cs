@@ -1,4 +1,5 @@
 using DooDuckInn.src.db;
+using DooDuckInn.src.transactions;
 using Microsoft.EntityFrameworkCore;
 
 namespace DooDuckInn.src.taxes;
@@ -23,6 +24,24 @@ public class TaxesService(AppDbContext db)
     {
         var tax = new Tax(jwtUserId, req.dateStart, req.dateEnd);
         db.Taxes.Add(tax);
+
+        // Populate tax report with essential transaction rows that will appear on every tax report
+        db.Transactions.AddRange(
+            new Transaction(tax.Id, "Stock", type: TransactionType.Sale),
+            new Transaction(tax.Id, "Till", type: TransactionType.Sale),
+            new Transaction(tax.Id, "Containers/Cups/wrap Paper/Paper Boxes", type: TransactionType.Sale),
+            new Transaction(tax.Id, "Western Power", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Alinta Gas", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Instant Waste Management", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Western Resource", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Telstra", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Fuel", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Shop Rent", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Strata Fee", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Gordon Q C Du", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Water Fees", type: TransactionType.Purchase),
+            new Transaction(tax.Id, "Bank Fees", type: TransactionType.Purchase));
+
         await db.SaveChangesAsync();
         return tax;
     }

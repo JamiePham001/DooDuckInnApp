@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DooDuckInn.src.transactions;
 
-public class TransactionsService(AppDbContext db)
+public class TransactionsService(AppDbContext db, TransactionAgent agent)
 {
     public async Task<Tax> CheckTransUserId(int taxId, int jwtUserId)
     {
@@ -44,6 +44,36 @@ public class TransactionsService(AppDbContext db)
         return transaction;
     }
 
+    // Discards imageBytes after the Claude call — nothing persists the image, per design.
+    public async Task<Transaction> CreateFromImageAsync(int taxId, int jwtUserId, byte[] imageBytes, string mediaType)
+    {
+        var tax = await db.Taxes.FindAsync(taxId);
+        if (tax is null) throw new KeyNotFoundException($"Tax {taxId} not found.");
+        await CheckTransUserId(tax.Id, jwtUserId);
+
+        var extracted = await agent.ExtractFromImageAsync(imageBytes, mediaType);
+        var existingTransactions = await db.Transactions.Where(t => t.TaxId == taxId).ToListAsync();
+
+        // ai workflow that checks whether the scanned document should update an existing
+        // transaction (e.g. a recurring bill under a different name) or create a new one.
+        var matchedId = existingTransactions.Count == 0
+            ? -1
+            : await agent.CheckExistsAsync(extracted.Name, existingTransactions);
+
+        if (matchedId == -1)
+        {
+            var transaction = new Transaction(taxId, extracted.Name, extracted.Amount, extracted.Gst, extracted.Type);
+            db.Transactions.Add(transaction);
+            await db.SaveChangesAsync();
+            return transaction;
+        }
+
+        var matched = existingTransactions.First(t => t.Id == matchedId);
+        matched.UpdateNums(extracted.Amount, extracted.Gst);
+        await db.SaveChangesAsync();
+        return matched;
+    }
+
     public async Task<bool> UpdateNameAsync(int id, int jwtUserId, string name)
     {
         var transaction = await db.Transactions.FindAsync(id);
@@ -51,6 +81,17 @@ public class TransactionsService(AppDbContext db)
         await CheckTransUserId(transaction.TaxId, jwtUserId);
 
         transaction.UpdateName(name);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateInstanceAsync(int id, int jwtUserId, UpdateTransactionRequest req)
+    {
+        var transaction = await db.Transactions.FindAsync(id);
+        if (transaction is null) return false;
+        await CheckTransUserId(transaction.TaxId, jwtUserId);
+
+        transaction.UpdateInstance(req.name, req.amount, req.gst, req.type);
         await db.SaveChangesAsync();
         return true;
     }
@@ -73,6 +114,17 @@ public class TransactionsService(AppDbContext db)
         await CheckTransUserId(transaction.TaxId, jwtUserId);
 
         transaction.UpdateGst(gst);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateTypeAsync(int id, int jwtUserId, TransactionType type)
+    {
+        var transaction = await db.Transactions.FindAsync(id);
+        if (transaction is null) return false;
+        await CheckTransUserId(transaction.TaxId, jwtUserId);
+
+        transaction.UpdateType(type);
         await db.SaveChangesAsync();
         return true;
     }

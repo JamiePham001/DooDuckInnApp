@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using DooDuckInn.src.users;
 using Microsoft.AspNetCore.Authorization;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace DooDuckInn.src.transactions;
 
@@ -27,6 +28,25 @@ public class TransactionsController(
         {
             var me = await CurrentUserAsync();
             return Ok(await transactions.GetById(id, me.Id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPatch("{id}/update")]
+    public async Task<IActionResult> UpdateInstance(int id, UpdateTransactionRequest req)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var updated = await transactions.UpdateInstanceAsync(id, me.Id, req);
+            return updated ? NoContent() : NotFound($"Transaction {id} not found");
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
@@ -84,6 +104,21 @@ public class TransactionsController(
         catch (ArgumentException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    [HttpPatch("{id}/update/type")]
+    public async Task<IActionResult> UpdateType(int id, TransactionType type)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var updated = await transactions.UpdateTypeAsync(id, me.Id, type);
+            return updated ? NoContent() : NotFound($"Transaction {id} not found");
         }
         catch (KeyNotFoundException ex)
         {

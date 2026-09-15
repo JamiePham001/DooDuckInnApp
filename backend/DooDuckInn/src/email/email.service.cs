@@ -23,6 +23,7 @@ public class EmailService(IConfiguration config)
         message.From.Add(MailboxAddress.Parse(RequireConfig("Ses:FromAddress")));
         message.To.Add(MailboxAddress.Parse(toAddress));
         message.Subject = subject;
+        // message.Cc.Add(MailboxAddress.Parse("some other persons email"));
 
         var builder = new BodyBuilder { TextBody = textBody, HtmlBody = htmlBody };
         if (attachment is not null)

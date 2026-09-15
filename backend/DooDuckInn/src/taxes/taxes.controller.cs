@@ -39,6 +39,20 @@ public class TaxesController(
         }
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            return Ok(await taxes.GetById(id, me.Id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
     [HttpPost("{id}/transactions")]
     public async Task<IActionResult> CreateTransaction(int id, CreateTransactionRequest request)
     {
@@ -59,17 +73,39 @@ public class TaxesController(
         }
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    private static readonly HashSet<string> AllowedImageTypes = new(StringComparer.OrdinalIgnoreCase)
     {
+        "image/jpeg", "image/png", "image/webp"
+    };
+
+    // Returns the extracted fields without saving anything — the client shows them for review,
+    // then the user confirms via the normal POST {id}/transactions to actually create it.
+    [HttpPost("{id}/transactions/scan")]
+    [RequestSizeLimit(8_000_000)] // 8MB comfortably covers a phone photo; Kestrel's 30MB default is the real ceiling
+    public async Task<IActionResult> ScanTransaction(int id, IFormFile image)
+    {
+        if (image is null || image.Length == 0)
+            return BadRequest("An image file is required.");
+        if (!AllowedImageTypes.Contains(image.ContentType))
+            return BadRequest("Unsupported image type. Use JPEG, PNG, or WebP.");
+
         try
         {
             var me = await CurrentUserAsync();
-            return Ok(await taxes.GetById(id, me.Id));
+
+            using var ms = new MemoryStream();
+            await image.CopyToAsync(ms);
+            var transaction = await transactions.CreateFromImageAsync(id, me.Id, ms.ToArray(), image.ContentType);
+
+            return Ok(transaction);
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (TransactionAgentException ex)
+        {
+            return UnprocessableEntity(ex.Message);
         }
     }
 
@@ -106,7 +142,7 @@ public class TaxesController(
 
             await email.SendAsync(
                 request.RecipientEmail,
-                $"GST Report — {tax.StartDate:MMMM yyyy} to {tax.EndDate:MMMM yyyy}",
+                $"Doo Duck Inn GST Report — {tax.StartDate:MMMM yyyy} to {tax.EndDate:MMMM yyyy}",
                 "Please find the attached GST report.",
                 attachment);
 

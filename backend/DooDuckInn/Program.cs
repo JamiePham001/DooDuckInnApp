@@ -9,6 +9,8 @@ using DooDuckInn.src.email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
+using Anthropic;
+using Anthropic.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+
+// Points the Anthropic SDK at Z.ai's Anthropic-compatible endpoint instead of Anthropic's own —
+// it mirrors the Messages API wire format exactly, so TransactionAgent needs zero code changes,
+// just a different base URL and API key. Swap BaseUrl back (and the config key) to move back to
+// real Claude models later.
+builder.Services.AddSingleton(sp =>
+    new AnthropicClient(new ClientOptions
+    {
+        BaseUrl = "https://api.z.ai/api/anthropic",
+        ApiKey = sp.GetRequiredService<IConfiguration>()["Glm:ApiKey"] ?? "",
+    }));
+builder.Services.AddScoped<TransactionAgent>();
+
 // Registers AppDbContext for dependency injection (that's why endpoints below can just take an
 // `AppDbContext db` parameter and have it handed to them). Skipped under the "Testing" environment
 // so CustomWebApplicationFactory can register InMemory instead — registering Npgsql here first
