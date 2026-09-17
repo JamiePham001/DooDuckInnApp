@@ -31,7 +31,7 @@ Making use of AI Workflows:
 - File / Blob Storage: AWS S3
 - Monitoring / APM: AWS CloudWatch
 - Transactional Email: AWS SES
-- AI / LLM: Anthropic Claude
+- AI / LLM: Anthropic SDK with GLM5.3 Flash model
 - Search: Postgres FTS
 - CI / CD: GitHub Actions
 

@@ -11,14 +11,15 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}
+      labelStyle={{ selected: { color: colors.backgroundSecondary } }}
     >
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require("@/assets/images/tabIcons/home.png")}
-          renderingMode="template"
-        />
+          sf={{ default: "house", selected: "house.fill" }}
+          md={{ default: "home", selected: "home_filled" }}
+        ></NativeTabs.Trigger.Icon>
+        <NativeTabs.Trigger.Badge>9+</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="gst">

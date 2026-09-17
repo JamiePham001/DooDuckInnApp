@@ -4,7 +4,7 @@ A business mobile application striving to help my dad become self sufficient in 
 
 ## Tech Stack
 
-- Frontend: React Native
+- Frontend: React Native Expo
 - Backend Runtime: ASP.NET Core (.NET)
 - Compute / Hosting: AWS Lambda + AWS API Gateway
 - Database: Neon PostgreSQL
@@ -13,13 +13,26 @@ A business mobile application striving to help my dad become self sufficient in 
 - File / Blob Storage: AWS S3
 - Monitoring / APM: AWS CloudWatch
 - Transactional Email: AWS SES
-- AI / LLM: Anthropic Claude
+- AI / LLM: Anthropic SDK with GLM5.3 Flash model
 - Search: Postgres FTS
 - CI / CD: GitHub Actions
 
 ## What I Learned
 
-- Writing OOP code
+- Writing competely OOP code
+  - Defining tables/entities as classes
+  - defining class methods
+  - usage of records and enums
+- Configuring JWT bearer authentication with .NET
+- Validating tokens from and connecting to AWS Cognito
+- Generating stylised and professional PDF documents using QuestPDF library
+- Connecting to verified identities in AWS SES via SMTP to write custom automated emails and send documents.
+- Create AI Workflows with GLM5.3 Flash using Anthropic SDK
+  - optimising cost by taking into consideration the complexity of the task, changing the type of model, applying a cap on token usage, and concise instructions
+  - formatting output configuration from AI response
+  - embedding dynamic parameters into instructions
+  - processing image requests with AI workflows into useable and interactable data.
+- React Native
 
 ## What I Can Improve On
 
@@ -60,3 +73,5 @@ TRANSACTION
   gst            (NOT_NULL, Double)
   type           (NOT_NULL, Integer, CHECK IN (0=Sale, 1=Purchase))
 ```
+
+React Native Components

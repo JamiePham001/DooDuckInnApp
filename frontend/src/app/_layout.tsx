@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import AppTabs from "@/components/app-tabs";
 
 import "react-native-get-random-values";
 import "react-native-url-polyfill/auto";
@@ -12,6 +11,7 @@ import { Amplify } from "aws-amplify";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import type { KeyValueStorageInterface } from "@aws-amplify/core";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react-native";
+import { Stack } from "expo-router";
 
 import LoginScreen from "@/app/login";
 
@@ -72,7 +72,9 @@ export default function TabLayout() {
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
           <AnimatedSplashOverlay />
-          <AppTabs />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+          </Stack>
         </ThemeProvider>
       </AuthGate>
     </Authenticator.Provider>
