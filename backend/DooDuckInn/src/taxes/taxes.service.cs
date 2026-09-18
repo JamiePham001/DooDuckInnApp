@@ -17,13 +17,19 @@ public class TaxesService(AppDbContext db)
 
     public async Task<List<Tax>> GetByUserId(int jwtUserId)
     {
-        return await db.Taxes.Where(t => t.UserId == jwtUserId).ToListAsync();
+        return await db.Taxes.Where(t => t.UserId == jwtUserId)
+            .OrderByDescending(t => t.StartDate)
+            .ToListAsync();
     }
 
     public async Task<Tax> CreateAsync(int jwtUserId, TaxRequest req)
     {
         var tax = new Tax(jwtUserId, req.dateStart, req.dateEnd);
         db.Taxes.Add(tax);
+        // tax.Id is DB-generated and still 0 until this save actually assigns it — the
+        // seeded Transactions below capture TaxId by value, not via a navigation
+        // property, so they'd otherwise all be saved with TaxId 0 instead of tax.Id.
+        await db.SaveChangesAsync();
 
         // Populate tax report with essential transaction rows that will appear on every tax report
         db.Transactions.AddRange(

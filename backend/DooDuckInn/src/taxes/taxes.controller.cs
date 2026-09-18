@@ -25,6 +25,28 @@ public class TaxesController(
         return await users.GetBySubAsync(sub);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var me = await CurrentUserAsync();
+        return Ok(await taxes.GetByUserId(me.Id));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(TaxRequest request)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var tax = await taxes.CreateAsync(me.Id, request);
+            return CreatedAtAction(nameof(GetById), new { id = tax.Id }, tax);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpGet("{id}/transactions")]
     public async Task<IActionResult> GetTransactionsByTaxId(int id)
     {

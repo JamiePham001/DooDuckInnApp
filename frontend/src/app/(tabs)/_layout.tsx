@@ -62,7 +62,11 @@ export default function TabLayout() {
         <Tabs.Screen
           name="gst"
           options={{
-            title: "GST",
+            title: "GST Reports",
+            // "gst" has its own nested Stack (gst/_layout.tsx) that owns header
+            // display per-screen (including the dynamic per-report title) — showing
+            // a header here too would stack a second, static header on top of it.
+            headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <AnimatedTabItem
                 size={iconSize}

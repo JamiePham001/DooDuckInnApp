@@ -12,20 +12,17 @@ public class Transaction
     private Transaction() { }
     public Transaction(int taxId, string name, TransactionType type)
     {
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name is required");
-
         TaxId = taxId;
-        Name = name;
+        Name = name ?? "";
 
         Type = type;
     }
     public Transaction(int taxId, string name, double amount, double gst, TransactionType type)
     {
         if (double.IsNegative(amount) || double.IsNegative(gst)) throw new ArgumentException("Amount or gst cant be negative");
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name is required");
 
         TaxId = taxId;
-        Name = name;
+        Name = name ?? "";
         Amount = Math.Round(amount, 2);
         Gst = Math.Round(gst, 2);
         Type = type;
@@ -34,9 +31,8 @@ public class Transaction
     public void UpdateInstance(string name, double amount, double gst, TransactionType type)
     {
         if (double.IsNegative(amount) || double.IsNegative(gst)) throw new ArgumentException("Amount or gst cant be negative");
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name is required");
 
-        Name = name;
+        Name = name ?? "";
         Amount = Math.Round(amount, 2);
         Gst = Math.Round(gst, 2);
         Type = type;
@@ -52,8 +48,7 @@ public class Transaction
 
     public void UpdateName(string name)
     {
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name is required");
-        Name = name;
+        Name = name ?? "";
     }
 
     public void UpdateAmount(double amount)

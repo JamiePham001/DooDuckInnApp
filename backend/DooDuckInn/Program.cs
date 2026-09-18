@@ -20,6 +20,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = builder.Configuration["Cognito:Authority"];
+        // JwtBearerHandler remaps standard JWT claim names to legacy .NET ClaimTypes URIs
+        // by default (e.g. "sub" -> ClaimTypes.NameIdentifier) — CurrentUserAsync() reads
+        // the raw "sub" claim name, so that remapping has to be disabled here or every
+        // request 500s inside a supposedly-successful auth.
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = true,
