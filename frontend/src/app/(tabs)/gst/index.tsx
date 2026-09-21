@@ -11,8 +11,9 @@ import {
   Pressable,
   Text,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
+import { useQuery } from "@tanstack/react-query";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -33,15 +34,19 @@ interface ITaxReport {
 // LAN IP (or an env-based config) once testing on a physical device.
 const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
-export default function GstListPage() {
+const fetchReports = async (jwtToken: string): Promise<ITaxReport[]> => {
+  const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+};
+
+const Reports = () => {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "unspecified" ? "light" : scheme];
   const router = useRouter();
-
-  const [reports, setReports] = useState<ITaxReport[]>([]);
   const [jwtToken, setJwtToken] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const getToken = async () => {
@@ -58,86 +63,35 @@ export default function GstListPage() {
     getToken();
   }, []);
 
-  useEffect(() => {
-    if (!jwtToken) return;
-    setLoading(true);
-    const fetchReports = async () => {
-      try {
-        const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
-          headers: { Authorization: `Bearer ${jwtToken}` },
-        });
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        setReports(await res.json());
-      } catch (err) {
-        console.error("Failed to fetch tax reports:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReports();
-  }, [jwtToken]);
+  // queryFn is called with a TanStack-supplied context object, not custom args —
+  // jwtToken is captured via closure instead, and included in queryKey so a token
+  // refresh (e.g. after re-login) correctly triggers a refetch instead of serving
+  // a cached result fetched under the old token.
+  const { data, isLoading, error } = useQuery<ITaxReport[]>({
+    queryKey: ["taxes", jwtToken],
+    queryFn: () => fetchReports(jwtToken),
+    enabled: !!jwtToken,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
+  });
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      {loading ? (
+    <>
+      {isLoading ? (
         <ThemedView
-          style={{ justifyContent: "center", alignItems: "center", flex: 1 }}
+          style={{
+            width: "100%",
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
         >
           <ActivityIndicator />
         </ThemedView>
       ) : (
-        <ThemedView style={styles.container}>
-          <ThemedView style={styles.headerRow}>
-            <Pressable
-              style={styles.button}
-              onPress={() => router.push({ pathname: "/gst/create_report" })}
-              // disabled={creating}
-            >
-              <ThemedText>New</ThemedText>
-            </Pressable>
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={modalVisible}
-              onRequestClose={() => {
-                // Alert.alert("Modal has been closed.");
-                setModalVisible(!modalVisible);
-              }}
-            >
-              <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                  <ThemedView>
-                    <ThemedText>GST Report Details</ThemedText>
-                  </ThemedView>
-                  <ThemedView>
-                    <ThemedText>Dates go here</ThemedText>
-                  </ThemedView>
-                  <ThemedView
-                    style={{
-                      justifyContent: "space-between",
-                      flexDirection: "row",
-                    }}
-                  >
-                    <Pressable
-                      style={[styles.button, styles.buttonClose]}
-                      onPress={() => setModalVisible(!modalVisible)}
-                    >
-                      <Text style={styles.textStyle}>Hide Modal</Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.button, styles.buttonClose]}
-                      onPress={() => setModalVisible(!modalVisible)}
-                    >
-                      <Text style={styles.textStyle}>Create</Text>
-                    </Pressable>
-                  </ThemedView>
-                </View>
-              </View>
-            </Modal>
-          </ThemedView>
-
-          {reports.length == 0 ? (
+        <>
+          {error && <Text>Error loading data</Text>}
+          {data?.length == 0 ? (
             <ThemedView>
               <ThemedText>Press "New" to create your first report</ThemedText>
             </ThemedView>
@@ -149,7 +103,7 @@ export default function GstListPage() {
                 gap: 5,
               }}
             >
-              {reports.map((report) => (
+              {data?.map((report) => (
                 <TouchableOpacity
                   key={report.id}
                   style={styles.row}
@@ -170,8 +124,29 @@ export default function GstListPage() {
               ))}
             </ThemedView>
           )}
-        </ThemedView>
+        </>
       )}
+    </>
+  );
+};
+
+export default function GstListPage() {
+  const router = useRouter();
+
+  return (
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ThemedView style={styles.container}>
+        <ThemedView style={styles.headerRow}>
+          <Pressable
+            style={styles.button}
+            onPress={() => router.push({ pathname: "/gst/create_report" })}
+            // disabled={creating}
+          >
+            <ThemedText>New</ThemedText>
+          </Pressable>
+        </ThemedView>
+        <Reports />
+      </ThemedView>
     </ScrollView>
   );
 }

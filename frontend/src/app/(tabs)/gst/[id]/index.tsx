@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
+import { useQuery } from "@tanstack/react-query";
 
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
@@ -40,9 +41,7 @@ export default function GstReportEditorPage() {
 
   const [soldArr, setSoldArr] = useState<ITransactionRes[]>([]);
   const [purchaseArr, setPurchaseArr] = useState<ITransactionRes[]>([]);
-  const [report, setReport] = useState<ITaxReport | null>(null);
   const [jwtToken, setJwtToken] = useState("");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getToken = async () => {
@@ -62,105 +61,105 @@ export default function GstReportEditorPage() {
     getToken();
   }, []);
 
+  const fetchReport = async (): Promise<ITaxReport> => {
+    const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return await res.json();
+  };
+
+  const fetchTransactions = async (): Promise<ITransactionRes[]> => {
+    const res = await fetch(
+      `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    return await res.json();
+  };
+
+  const { data, isLoading, error } = useQuery<ITransactionRes[]>({
+    queryKey: [`TransactionTaxId:${taxId}`, jwtToken],
+    queryFn: () => fetchTransactions(),
+    enabled: !!jwtToken,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
+  });
+
+  const {
+    data: taxData,
+    isLoading: taxLoading,
+    error: taxError,
+  } = useQuery<ITaxReport>({
+    queryKey: [`Tax:${taxId}`, jwtToken],
+    queryFn: () => fetchReport(),
+    enabled: !!jwtToken,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
+  });
+
   useEffect(() => {
-    if (!jwtToken || !taxId) return;
-    setLoading(true);
+    if (!data) return;
+    setSoldArr(data.filter((obj) => obj.type == 0));
+    setPurchaseArr(data.filter((obj) => obj.type == 1));
+  }, [data]);
 
-    const fetchReport = async () => {
-      try {
-        const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
-          headers: { Authorization: `Bearer ${jwtToken}` },
-        });
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        setReport(await res.json());
-      } catch (err) {
-        console.error("Failed to fetch tax report:", err);
-      }
-    };
+  if (isLoading || taxLoading)
+    return (
+      <ThemedView style={styles.reportContainer}>
+        <ActivityIndicator />
+      </ThemedView>
+    );
 
-    fetchReport();
-  }, [jwtToken, taxId]);
-
-  useEffect(() => {
-    if (!jwtToken || !taxId) return;
-    setLoading(true);
-
-    const fetchTransactions = async () => {
-      try {
-        const res = await fetch(
-          `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          },
-        );
-
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
-        }
-
-        const data = await res.json();
-        setSoldArr(data.filter((obj: ITransactionRes) => obj.type == 0));
-        setPurchaseArr(data.filter((obj: ITransactionRes) => obj.type == 1));
-      } catch (err) {
-        console.error("API call failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [jwtToken, taxId]);
-
+  if (error || taxError)
+    return (
+      <ThemedView style={styles.reportContainer}>
+        <ThemedText>Error loading data</ThemedText>
+      </ThemedView>
+    );
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <Stack.Screen
         options={{
-          title: report
-            ? formatDateRange(report.startDate, report.endDate)
+          title: taxData
+            ? formatDateRange(taxData.startDate, taxData.endDate)
             : "",
         }}
       />
 
-      {loading ? (
-        <ThemedView
-          style={{
-            flex: 1,
-            width: "100%",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ActivityIndicator />
+      <ThemedView
+        style={{
+          paddingHorizontal: 20,
+          width: "100%",
+        }}
+      >
+        <ThemedView style={styles.reportContainer}>
+          <GstTable
+            title="Sold"
+            array={soldArr}
+            jwtToken={jwtToken}
+            taxId={taxId}
+            transactionType={0}
+          ></GstTable>
+          <GstTable
+            title="Purchases"
+            array={purchaseArr}
+            jwtToken={jwtToken}
+            taxId={taxId}
+            transactionType={1}
+          ></GstTable>
         </ThemedView>
-      ) : (
-        <ThemedView
-          style={{
-            paddingHorizontal: 20,
-            width: "100%",
-          }}
-        >
-          <ThemedView style={styles.reportContainer}>
-            <GstTable
-              title="Sold"
-              array={soldArr}
-              jwtToken={jwtToken}
-              taxId={taxId}
-              transactionType={0}
-            ></GstTable>
-            <GstTable
-              title="Purchases"
-              array={purchaseArr}
-              jwtToken={jwtToken}
-              taxId={taxId}
-              transactionType={1}
-            ></GstTable>
-          </ThemedView>
-        </ThemedView>
-      )}
+      </ThemedView>
     </ScrollView>
   );
 }

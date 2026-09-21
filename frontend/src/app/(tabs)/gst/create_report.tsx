@@ -6,6 +6,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { Alert, Platform, Pressable, StyleSheet } from "react-native";
 import React from "react";
 import { fetchAuthSession } from "aws-amplify/auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ITaxReport {
   id: number;
@@ -37,6 +38,7 @@ const months = [
 ];
 
 const CreateReport = () => {
+  const queryClient = useQueryClient();
   const [jwtToken, setJwtToken] = useState("");
 
   const [year, setYear] = useState(null);
@@ -86,6 +88,8 @@ const CreateReport = () => {
       if (!res.ok) throw new Error(`API error: ${res.status}`);
 
       const tax: ITaxReport = await res.json();
+      // Prefix match — invalidates ["gst", jwtToken] without needing the token value here.
+      queryClient.invalidateQueries({ queryKey: ["taxes"] });
       router.push({ pathname: "/gst/[id]", params: { id: tax.id.toString() } });
     } catch (err) {
       console.error("Failed to create tax report:", err);
@@ -150,7 +154,7 @@ const CreateReport = () => {
           style={{
             flexDirection: "row",
             width: "100%",
-            justifyContent: "space-between",
+            justifyContent: "center",
           }}
         >
           <Pressable style={styles.button} onPress={() => handleCreate()}>

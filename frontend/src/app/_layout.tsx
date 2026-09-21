@@ -12,10 +12,16 @@ import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import type { KeyValueStorageInterface } from "@aws-amplify/core";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react-native";
 import { Stack } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import LoginScreen from "@/app/login";
 
 SplashScreen.preventAutoHideAsync();
+
+// One client for the whole app — screens that want to invalidate another
+// screen's cached query (e.g. create_report invalidating the "gst" list after
+// creating a report) need to share the same QueryClient via this provider.
+const queryClient = new QueryClient();
 
 Amplify.configure({
   Auth: {
@@ -66,17 +72,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   return (
-    <Authenticator.Provider>
-      <AuthGate>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <AnimatedSplashOverlay />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </ThemeProvider>
-      </AuthGate>
-    </Authenticator.Provider>
+    <QueryClientProvider client={queryClient}>
+      <Authenticator.Provider>
+        <AuthGate>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <AnimatedSplashOverlay />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </ThemeProvider>
+        </AuthGate>
+      </Authenticator.Provider>
+    </QueryClientProvider>
   );
 }

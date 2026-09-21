@@ -3,6 +3,7 @@ import { TextInput, TouchableOpacity, Platform } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useRef, useState } from "react";
 
@@ -26,12 +27,15 @@ interface TableProps {
 function DebouncedNameInput({
   initialName,
   onSave,
+  id,
 }: {
   initialName: string;
   onSave: (name: string) => Promise<Response>;
+  id: number;
 }) {
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
 
   function handleChange(text: string) {
     const previousValue = name;
@@ -42,9 +46,9 @@ function DebouncedNameInput({
       try {
         const res = await onSave(text); // fires only after ~600ms of no further typing
         if (!res.ok) {
-          setName(previousValue);
-          // set up a real time notification that lets the user know the name change failed
+          throw new Error("Failed to update amount");
         }
+        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
       } catch {
         setName(previousValue);
         // network failure — same rollback, since the edit never reached the backend
@@ -64,22 +68,35 @@ function DebouncedNameInput({
 function DebouncedAmountInput({
   initialAmount,
   onSave,
+  id,
 }: {
   initialAmount: number;
-  onSave: (amount: number) => void;
+  onSave: (amount: number) => Promise<Response>;
+  id: number;
 }) {
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialAmount.toString());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
 
   function handleChange(value: string) {
+    const previousValue = text;
     setText(value); // updates instantly — the input never feels laggy
 
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      const parsed = parseFloat(value);
-      if (!Number.isNaN(parsed)) onSave(parsed); // fires only after ~600ms of no further typing
+    timerRef.current = setTimeout(async () => {
+      try {
+        const parsed = parseFloat(value);
+        if (Number.isNaN(parsed)) throw new Error("Amount failed to parse");
+        const res = await onSave(parsed); // fires only after ~600ms of no further typing
+        if (!res.ok) {
+          throw new Error("Failed to update amount");
+        }
+        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
+      } catch (error) {
+        setText(previousValue);
+      }
     }, 600);
   }
 
@@ -96,22 +113,36 @@ function DebouncedAmountInput({
 function DebouncedGstInput({
   initialGst,
   onSave,
+  id,
 }: {
   initialGst: number;
-  onSave: (gst: number) => void;
+  onSave: (gst: number) => Promise<Response>;
+  id: number;
 }) {
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialGst.toString());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
 
   function handleChange(value: string) {
+    const previousValue = text;
     setText(value); // updates instantly — the input never feels laggy
 
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      const parsed = parseFloat(value);
-      if (!Number.isNaN(parsed)) onSave(parsed); // fires only after ~600ms of no further typing
+    timerRef.current = setTimeout(async () => {
+      try {
+        const parsed = parseFloat(value);
+        if (Number.isNaN(parsed)) throw new Error("Amount failed to parse");
+        const res = await onSave(parsed); // fires only after ~600ms of no further typing
+
+        if (!res.ok) {
+          throw new Error("Failed to update amount");
+        }
+        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
+      } catch (error) {
+        setText(previousValue);
+      }
     }, 600);
   }
 
@@ -168,6 +199,7 @@ const GstTable = ({
           <ThemedView style={styles.tableRow} key={transaction.id}>
             <DebouncedNameInput
               initialName={transaction.name}
+              id={transaction.taxId}
               onSave={(name) =>
                 fetch(
                   `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
@@ -180,6 +212,7 @@ const GstTable = ({
             ></DebouncedNameInput>
             <DebouncedAmountInput
               initialAmount={transaction.amount}
+              id={transaction.taxId}
               onSave={(amount) =>
                 fetch(
                   `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
@@ -192,6 +225,7 @@ const GstTable = ({
             ></DebouncedAmountInput>
             <DebouncedGstInput
               initialGst={transaction.gst}
+              id={transaction.taxId}
               onSave={(gst) =>
                 fetch(
                   `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst?gst=${encodeURIComponent(gst)}`,
