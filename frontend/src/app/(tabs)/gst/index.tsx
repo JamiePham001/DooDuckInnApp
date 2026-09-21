@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Modal,
+  View,
+  Pressable,
+  Text,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -35,7 +40,8 @@ export default function GstListPage() {
 
   const [reports, setReports] = useState<ITaxReport[]>([]);
   const [jwtToken, setJwtToken] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const getToken = async () => {
@@ -54,7 +60,7 @@ export default function GstListPage() {
 
   useEffect(() => {
     if (!jwtToken) return;
-
+    setLoading(true);
     const fetchReports = async () => {
       try {
         const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
@@ -64,77 +70,108 @@ export default function GstListPage() {
         setReports(await res.json());
       } catch (err) {
         console.error("Failed to fetch tax reports:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchReports();
   }, [jwtToken]);
 
-  async function handleCreate() {
-    if (creating) return;
-    setCreating(true);
-    try {
-      const start = new Date();
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + 3);
-      const toDateOnly = (d: Date) => d.toISOString().slice(0, 10);
-
-      const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwtToken}`,
-        },
-        body: JSON.stringify({
-          dateStart: toDateOnly(start),
-          dateEnd: toDateOnly(end),
-        }),
-      });
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
-
-      const tax: ITaxReport = await res.json();
-      router.push({ pathname: "/gst/[id]", params: { id: tax.id.toString() } });
-    } catch (err) {
-      console.error("Failed to create tax report:", err);
-      Alert.alert("Error", "Could not create a new GST report.");
-    } finally {
-      setCreating(false);
-    }
-  }
-
   return (
-    <ScrollView>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleCreate}
-            disabled={creating}
-          >
-            <ThemedText>{creating ? "Creating..." : "New"}</ThemedText>
-          </TouchableOpacity>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      {loading ? (
+        <ThemedView
+          style={{ justifyContent: "center", alignItems: "center", flex: 1 }}
+        >
+          <ActivityIndicator />
         </ThemedView>
+      ) : (
+        <ThemedView style={styles.container}>
+          <ThemedView style={styles.headerRow}>
+            <Pressable
+              style={styles.button}
+              onPress={() => router.push({ pathname: "/gst/create_report" })}
+              // disabled={creating}
+            >
+              <ThemedText>New</ThemedText>
+            </Pressable>
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => {
+                // Alert.alert("Modal has been closed.");
+                setModalVisible(!modalVisible);
+              }}
+            >
+              <View style={styles.centeredView}>
+                <View style={styles.modalView}>
+                  <ThemedView>
+                    <ThemedText>GST Report Details</ThemedText>
+                  </ThemedView>
+                  <ThemedView>
+                    <ThemedText>Dates go here</ThemedText>
+                  </ThemedView>
+                  <ThemedView
+                    style={{
+                      justifyContent: "space-between",
+                      flexDirection: "row",
+                    }}
+                  >
+                    <Pressable
+                      style={[styles.button, styles.buttonClose]}
+                      onPress={() => setModalVisible(!modalVisible)}
+                    >
+                      <Text style={styles.textStyle}>Hide Modal</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.button, styles.buttonClose]}
+                      onPress={() => setModalVisible(!modalVisible)}
+                    >
+                      <Text style={styles.textStyle}>Create</Text>
+                    </Pressable>
+                  </ThemedView>
+                </View>
+              </View>
+            </Modal>
+          </ThemedView>
 
-        {reports.map((report) => (
-          <TouchableOpacity
-            key={report.id}
-            style={styles.row}
-            onPress={() =>
-              router.push({
-                pathname: "/gst/[id]",
-                params: { id: report.id.toString() },
-              })
-            }
-          >
-            <ThemedText>
-              {formatDateRange(report.startDate, report.endDate)}
-            </ThemedText>
-            <ThemedText style={{ color: colors.textSecondary }}>
-              {report.isSent ? "Sent" : "Draft"}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </ThemedView>
+          {reports.length == 0 ? (
+            <ThemedView>
+              <ThemedText>Press "New" to create your first report</ThemedText>
+            </ThemedView>
+          ) : (
+            <ThemedView
+              style={{
+                alignSelf: "flex-start",
+                width: "100%",
+                gap: 5,
+              }}
+            >
+              {reports.map((report) => (
+                <TouchableOpacity
+                  key={report.id}
+                  style={styles.row}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/gst/[id]",
+                      params: { id: report.id.toString() },
+                    })
+                  }
+                >
+                  <ThemedText>
+                    {formatDateRange(report.startDate, report.endDate)}
+                  </ThemedText>
+                  <ThemedText style={{ color: colors.textSecondary }}>
+                    {report.isSent ? "Sent" : "Draft"}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ThemedView>
+          )}
+        </ThemedView>
+      )}
     </ScrollView>
   );
 }
@@ -156,6 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    color: "white",
   },
   row: {
     flexDirection: "row",
@@ -165,5 +203,41 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonOpen: {
+    backgroundColor: "#F194FF",
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
   },
 });

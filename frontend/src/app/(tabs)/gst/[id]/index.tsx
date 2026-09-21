@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
 import { formatDateRange } from "@/utils/format-date-range";
+import { ThemedText } from "@/components/themed-text";
 
 interface ITransactionRes {
   id: number;
@@ -35,6 +42,7 @@ export default function GstReportEditorPage() {
   const [purchaseArr, setPurchaseArr] = useState<ITransactionRes[]>([]);
   const [report, setReport] = useState<ITaxReport | null>(null);
   const [jwtToken, setJwtToken] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getToken = async () => {
@@ -56,6 +64,7 @@ export default function GstReportEditorPage() {
 
   useEffect(() => {
     if (!jwtToken || !taxId) return;
+    setLoading(true);
 
     const fetchReport = async () => {
       try {
@@ -74,6 +83,7 @@ export default function GstReportEditorPage() {
 
   useEffect(() => {
     if (!jwtToken || !taxId) return;
+    setLoading(true);
 
     const fetchTransactions = async () => {
       try {
@@ -97,6 +107,8 @@ export default function GstReportEditorPage() {
         setPurchaseArr(data.filter((obj: ITransactionRes) => obj.type == 1));
       } catch (err) {
         console.error("API call failed:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -104,34 +116,51 @@ export default function GstReportEditorPage() {
   }, [jwtToken, taxId]);
 
   return (
-    <ScrollView>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <Stack.Screen
-        options={{ title: report ? formatDateRange(report.startDate, report.endDate) : "" }}
-      />
-      <ThemedView
-        style={{
-          flex: 1,
-          paddingHorizontal: 20,
-          width: "100%",
+        options={{
+          title: report
+            ? formatDateRange(report.startDate, report.endDate)
+            : "",
         }}
-      >
-        <ThemedView style={styles.reportContainer}>
-          <GstTable
-            title="Sold"
-            array={soldArr}
-            jwtToken={jwtToken}
-            taxId={taxId}
-            transactionType={0}
-          ></GstTable>
-          <GstTable
-            title="Purchases"
-            array={purchaseArr}
-            jwtToken={jwtToken}
-            taxId={taxId}
-            transactionType={1}
-          ></GstTable>
+      />
+
+      {loading ? (
+        <ThemedView
+          style={{
+            flex: 1,
+            width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator />
         </ThemedView>
-      </ThemedView>
+      ) : (
+        <ThemedView
+          style={{
+            paddingHorizontal: 20,
+            width: "100%",
+          }}
+        >
+          <ThemedView style={styles.reportContainer}>
+            <GstTable
+              title="Sold"
+              array={soldArr}
+              jwtToken={jwtToken}
+              taxId={taxId}
+              transactionType={0}
+            ></GstTable>
+            <GstTable
+              title="Purchases"
+              array={purchaseArr}
+              jwtToken={jwtToken}
+              taxId={taxId}
+              transactionType={1}
+            ></GstTable>
+          </ThemedView>
+        </ThemedView>
+      )}
     </ScrollView>
   );
 }
