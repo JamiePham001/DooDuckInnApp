@@ -11,13 +11,14 @@ import {
 } from "react-native";
 import { router, useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "react-native";
 import { formatDateRange } from "@/utils/format-date-range";
+import { SwipeToDelete } from "@/components/swipe-to-delete";
 
 interface ITaxReport {
   id: number;
@@ -44,6 +45,7 @@ const Reports = () => {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "unspecified" ? "light" : scheme];
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [jwtToken, setJwtToken] = useState("");
 
   useEffect(() => {
@@ -72,6 +74,22 @@ const Reports = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
   });
+
+  const deleteReport = async (taxId: number) => {
+    try {
+      const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      if (!res.ok) throw new Error(`Failed to delete report: ${res.status}`);
+      queryClient.setQueryData<ITaxReport[]>(["taxes", jwtToken], (current) =>
+        current?.filter((r) => r.id !== taxId),
+      );
+      queryClient.invalidateQueries({ queryKey: ["taxes"] });
+    } catch (err) {
+      console.error("Failed to delete report:", err);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -125,23 +143,29 @@ const Reports = () => {
           }}
         >
           {data?.map((report) => (
-            <TouchableOpacity
+            <SwipeToDelete
               key={report.id}
-              style={styles.row}
-              onPress={() =>
-                router.push({
-                  pathname: "/gst/[id]",
-                  params: { id: report.id.toString() },
-                })
-              }
+              confirmMessage={`Delete the report for ${formatDateRange(report.startDate, report.endDate)}? This can't be undone.`}
+              onDelete={() => deleteReport(report.id)}
+              borderRadius={20}
             >
-              <ThemedText>
-                {formatDateRange(report.startDate, report.endDate)}
-              </ThemedText>
-              <ThemedText style={{ color: colors.textSecondary }}>
-                {report.isSent ? "Sent" : "Draft"}
-              </ThemedText>
-            </TouchableOpacity>
+              <Pressable
+                style={styles.row}
+                onPress={() =>
+                  router.push({
+                    pathname: "/gst/[id]",
+                    params: { id: report.id.toString() },
+                  })
+                }
+              >
+                <ThemedText>
+                  {formatDateRange(report.startDate, report.endDate)}
+                </ThemedText>
+                <ThemedText style={{ color: colors.textSecondary }}>
+                  {report.isSent ? "Sent" : "Draft"}
+                </ThemedText>
+              </Pressable>
+            </SwipeToDelete>
           ))}
         </ThemedView>
       )}

@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useEffect, useRef, useState } from "react";
 
+import { SwipeToDelete } from "@/components/swipe-to-delete";
+
 interface ITransactionRes {
   id: number;
   taxId: number;
@@ -206,6 +208,28 @@ const GstTable = ({
       setCreating(false);
     }
   };
+
+  const deleteRow = async (transactionId: number) => {
+    try {
+      const res = await fetch(
+        `http://${API_HOST}:5010/api/transactions/${transactionId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        },
+      );
+      if (!res.ok) {
+        throw new Error(`Failed to delete transaction: ${res.status}`);
+      }
+      setTableArray((current) => current.filter((t) => t.id !== transactionId));
+      queryClient.invalidateQueries({
+        queryKey: [`TransactionTaxId:${taxId}`],
+      });
+    } catch (error) {
+      console.error("Failed to delete row:", error);
+    }
+  };
+
   return (
     <ThemedView style={{ width: "100%", gap: 5 }}>
       <ThemedView style={styles.tableContainer}>
@@ -219,47 +243,54 @@ const GstTable = ({
           <ThemedText style={{ flex: 1, textAlign: "left" }}>GST</ThemedText>
         </ThemedView>
         {tableArray.map((transaction) => (
-          <ThemedView style={styles.tableRow} key={transaction.id}>
-            <DebouncedNameInput
-              initialName={transaction.name}
-              id={transaction.taxId}
-              onSave={(name) =>
-                fetch(
-                  `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
-                  {
-                    method: "PATCH",
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                  },
-                )
-              }
-            ></DebouncedNameInput>
-            <DebouncedAmountInput
-              initialAmount={transaction.amount}
-              id={transaction.taxId}
-              onSave={(amount) =>
-                fetch(
-                  `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
-                  {
-                    method: "PATCH",
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                  },
-                )
-              }
-            ></DebouncedAmountInput>
-            <DebouncedGstInput
-              initialGst={transaction.gst}
-              id={transaction.taxId}
-              onSave={(gst) =>
-                fetch(
-                  `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst?gst=${encodeURIComponent(gst)}`,
-                  {
-                    method: "PATCH",
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                  },
-                )
-              }
-            ></DebouncedGstInput>
-          </ThemedView>
+          <SwipeToDelete
+            key={transaction.id}
+            confirmMessage={`Delete "${transaction.name || "this transaction"}"? This can't be undone.`}
+            onDelete={() => deleteRow(transaction.id)}
+            borderRadius={0}
+          >
+            <ThemedView style={styles.tableRow}>
+              <DebouncedNameInput
+                initialName={transaction.name}
+                id={transaction.taxId}
+                onSave={(name) =>
+                  fetch(
+                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
+                    {
+                      method: "PATCH",
+                      headers: { Authorization: `Bearer ${jwtToken}` },
+                    },
+                  )
+                }
+              ></DebouncedNameInput>
+              <DebouncedAmountInput
+                initialAmount={transaction.amount}
+                id={transaction.taxId}
+                onSave={(amount) =>
+                  fetch(
+                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
+                    {
+                      method: "PATCH",
+                      headers: { Authorization: `Bearer ${jwtToken}` },
+                    },
+                  )
+                }
+              ></DebouncedAmountInput>
+              <DebouncedGstInput
+                initialGst={transaction.gst}
+                id={transaction.taxId}
+                onSave={(gst) =>
+                  fetch(
+                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst?gst=${encodeURIComponent(gst)}`,
+                    {
+                      method: "PATCH",
+                      headers: { Authorization: `Bearer ${jwtToken}` },
+                    },
+                  )
+                }
+              ></DebouncedGstInput>
+            </ThemedView>
+          </SwipeToDelete>
         ))}
         <TouchableOpacity
           style={styles.tableBtn}

@@ -13,6 +13,7 @@ import type { KeyValueStorageInterface } from "@aws-amplify/core";
 import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react-native";
 import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import LoginScreen from "@/app/login";
 
@@ -72,19 +73,21 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   return (
-    <QueryClientProvider client={queryClient}>
-      <Authenticator.Provider>
-        <AuthGate>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-            </Stack>
-          </ThemeProvider>
-        </AuthGate>
-      </Authenticator.Provider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <Authenticator.Provider>
+          <AuthGate>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <AnimatedSplashOverlay />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+            </ThemeProvider>
+          </AuthGate>
+        </Authenticator.Provider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
