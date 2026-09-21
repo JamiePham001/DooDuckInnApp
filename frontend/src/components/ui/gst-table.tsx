@@ -5,7 +5,7 @@ import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ITransactionRes {
   id: number;
@@ -164,11 +164,18 @@ const GstTable = ({
   transactionType,
 }: TableProps) => {
   const [tableArray, setTableArray] = useState(array);
+  const [creating, setCreating] = useState(false);
+  useEffect(() => {
+    setTableArray(array);
+  }, [array]);
+
   const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
+  const queryClient = useQueryClient();
   const addRow = async () => {
     try {
+      setCreating(true);
       const res = await fetch(
-        `http://${API_HOST}:5010/api/taxes/${taxId}?type=${encodeURIComponent(transactionType)}`,
+        `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
         {
           method: "POST",
           headers: {
@@ -176,12 +183,28 @@ const GstTable = ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${jwtToken}`,
           },
+          body: JSON.stringify({
+            taxId,
+            name: "",
+            amount: 0,
+            gst: 0,
+            type: transactionType,
+          }),
         },
       );
       if (!res.ok) {
         throw new Error(`Failed to create transaction: ${res.status}`);
       }
-    } catch (error) {}
+      const transaction = await res.json();
+      setTableArray([...tableArray, transaction]);
+      queryClient.invalidateQueries({
+        queryKey: [`TransactionTaxId:${taxId}`],
+      });
+    } catch (error) {
+      console.error("Failed to add row:", error);
+    } finally {
+      setCreating(false);
+    }
   };
   return (
     <ThemedView style={{ width: "100%", gap: 5 }}>
@@ -195,7 +218,7 @@ const GstTable = ({
           <ThemedText style={{ flex: 1, textAlign: "left" }}>Amount</ThemedText>
           <ThemedText style={{ flex: 1, textAlign: "left" }}>GST</ThemedText>
         </ThemedView>
-        {array.map((transaction) => (
+        {tableArray.map((transaction) => (
           <ThemedView style={styles.tableRow} key={transaction.id}>
             <DebouncedNameInput
               initialName={transaction.name}
@@ -238,7 +261,11 @@ const GstTable = ({
             ></DebouncedGstInput>
           </ThemedView>
         ))}
-        <TouchableOpacity style={styles.tableBtn} onPress={addRow}>
+        <TouchableOpacity
+          style={styles.tableBtn}
+          onPress={addRow}
+          disabled={creating}
+        >
           <ThemedText>+</ThemedText>
         </TouchableOpacity>
       </ThemedView>

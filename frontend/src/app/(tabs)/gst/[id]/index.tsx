@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
 } from "react-native";
@@ -136,6 +137,20 @@ export default function GstReportEditorPage() {
             : "",
         }}
       />
+      <ThemedView
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          paddingHorizontal: 20,
+        }}
+      >
+        <Pressable style={styles.button}>
+          <ThemedText>Scan</ThemedText>
+        </Pressable>
+        <Pressable style={styles.button}>
+          <ThemedText>Send</ThemedText>
+        </Pressable>
+      </ThemedView>
 
       <ThemedView
         style={{
@@ -170,5 +185,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 20,
+  },
+  button: {
+    backgroundColor: "#1877F2",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    color: "white",
   },
 });

@@ -6,8 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  View,
   Pressable,
   Text,
 } from "react-native";
@@ -75,9 +73,39 @@ const Reports = () => {
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
   });
 
+  if (isLoading) {
+    return (
+      <ThemedView
+        style={{
+          width: "100%",
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator />
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView
+        style={{
+          width: "100%",
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text>Error loading data</Text>
+      </ThemedView>
+    );
+  }
+
   return (
     <>
-      {isLoading ? (
+      {data?.length == 0 ? (
         <ThemedView
           style={{
             width: "100%",
@@ -86,45 +114,36 @@ const Reports = () => {
             alignItems: "center",
           }}
         >
-          <ActivityIndicator />
+          <ThemedText>Press "New" to create your first report</ThemedText>
         </ThemedView>
       ) : (
-        <>
-          {error && <Text>Error loading data</Text>}
-          {data?.length == 0 ? (
-            <ThemedView>
-              <ThemedText>Press "New" to create your first report</ThemedText>
-            </ThemedView>
-          ) : (
-            <ThemedView
-              style={{
-                alignSelf: "flex-start",
-                width: "100%",
-                gap: 5,
-              }}
+        <ThemedView
+          style={{
+            alignSelf: "flex-start",
+            width: "100%",
+            gap: 5,
+          }}
+        >
+          {data?.map((report) => (
+            <TouchableOpacity
+              key={report.id}
+              style={styles.row}
+              onPress={() =>
+                router.push({
+                  pathname: "/gst/[id]",
+                  params: { id: report.id.toString() },
+                })
+              }
             >
-              {data?.map((report) => (
-                <TouchableOpacity
-                  key={report.id}
-                  style={styles.row}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/gst/[id]",
-                      params: { id: report.id.toString() },
-                    })
-                  }
-                >
-                  <ThemedText>
-                    {formatDateRange(report.startDate, report.endDate)}
-                  </ThemedText>
-                  <ThemedText style={{ color: colors.textSecondary }}>
-                    {report.isSent ? "Sent" : "Draft"}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </ThemedView>
-          )}
-        </>
+              <ThemedText>
+                {formatDateRange(report.startDate, report.endDate)}
+              </ThemedText>
+              <ThemedText style={{ color: colors.textSecondary }}>
+                {report.isSent ? "Sent" : "Draft"}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </ThemedView>
       )}
     </>
   );
@@ -160,8 +179,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "flex-end",
   },
   button: {
     backgroundColor: "#1877F2",
