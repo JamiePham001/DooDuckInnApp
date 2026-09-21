@@ -2,6 +2,7 @@ import * as Device from "expo-device";
 import { Platform, StyleSheet, Button, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import React from "react";
 import { AnimatedIcon } from "@/components/animated-icon";
 import { HintRow } from "@/components/hint-row";
 import { ThemedText } from "@/components/themed-text";

@@ -10,6 +10,7 @@ import {
 import { Stack, useLocalSearchParams } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery } from "@tanstack/react-query";
+import { router, useRouter } from "expo-router";
 
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
@@ -39,10 +40,13 @@ const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 export default function GstReportEditorPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taxId = Number(id);
+  const router = useRouter();
 
   const [soldArr, setSoldArr] = useState<ITransactionRes[]>([]);
   const [purchaseArr, setPurchaseArr] = useState<ITransactionRes[]>([]);
   const [jwtToken, setJwtToken] = useState("");
+  const [sending, setSending] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     const getToken = async () => {
@@ -87,6 +91,43 @@ export default function GstReportEditorPage() {
     }
 
     return await res.json();
+  };
+
+  const sendReport = async () => {
+    try {
+      setSending(true);
+      const res = await fetch(
+        `http://${API_HOST}:5010/api/taxes/${taxId}/send-report`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+          body: JSON.stringify({
+            RecipientEmail: "jamie.pham@outlook.com",
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to send report.");
+      }
+    } catch (error) {
+      console.error("Error sending report: ", error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const scanInvoice = async () => {
+    try {
+      setScanning(true);
+      // const res = await fetch
+    } catch (error) {
+    } finally {
+      setScanning(false);
+    }
   };
 
   const { data, isLoading, error } = useQuery<ITransactionRes[]>({
@@ -142,13 +183,31 @@ export default function GstReportEditorPage() {
           flexDirection: "row",
           justifyContent: "space-between",
           paddingHorizontal: 20,
+          paddingBottom: 20,
         }}
       >
-        <Pressable style={styles.button}>
-          <ThemedText>Scan</ThemedText>
+        <Pressable
+          style={styles.button}
+          onPress={() =>
+            router.push({
+              pathname: "/gst/[id]/camera",
+              params: { id: id },
+            })
+          }
+          disabled={scanning}
+        >
+          <ThemedText>
+            {scanning ? <ActivityIndicator color={"white"} /> : "Scan"}
+          </ThemedText>
         </Pressable>
-        <Pressable style={styles.button}>
-          <ThemedText>Send</ThemedText>
+        <Pressable
+          style={styles.button}
+          onPress={sendReport}
+          disabled={sending}
+        >
+          <ThemedText>
+            {sending ? <ActivityIndicator color={"white"} /> : "Send"}
+          </ThemedText>
         </Pressable>
       </ThemedView>
 

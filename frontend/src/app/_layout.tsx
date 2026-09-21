@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
@@ -54,6 +54,11 @@ class InMemoryStorage implements KeyValueStorageInterface {
 
 cognitoUserPoolsTokenProvider.setKeyValueStorage(new InMemoryStorage());
 
+// TEMP DEV BYPASS: flip to true to skip login entirely (e.g. testing the camera
+// screen under Expo Go, where the Amplify/Cognito login path is unreliable).
+// MUST be flipped back to false before committing/shipping.
+const DEV_SKIP_AUTH = false;
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { authStatus } = useAuthenticator((context) => [context.authStatus]);
 
@@ -61,11 +66,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // Amplify starts in "configuring" while it checks for a stored session, then
     // settles to authenticated/unauthenticated — only hide the splash once we know
     // which screen to show, so cold start never flashes the login page.
-    if (authStatus !== "configuring") {
+    if (authStatus !== "configuring" || DEV_SKIP_AUTH) {
       SplashScreen.hideAsync();
     }
   }, [authStatus]);
 
+  if (DEV_SKIP_AUTH) return children;
   if (authStatus === "configuring") return null;
   return authStatus === "authenticated" ? children : <LoginScreen />;
 }
