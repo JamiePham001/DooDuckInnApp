@@ -3,7 +3,6 @@ import { TextInput, TouchableOpacity, Platform } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -29,15 +28,12 @@ interface TableProps {
 function DebouncedNameInput({
   initialName,
   onSave,
-  id,
 }: {
   initialName: string;
   onSave: (name: string) => Promise<Response>;
-  id: number;
 }) {
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queryClient = useQueryClient();
 
   function handleChange(text: string) {
     const previousValue = name;
@@ -50,7 +46,6 @@ function DebouncedNameInput({
         if (!res.ok) {
           throw new Error("Failed to update amount");
         }
-        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
       } catch {
         setName(previousValue);
         // network failure — same rollback, since the edit never reached the backend
@@ -70,17 +65,14 @@ function DebouncedNameInput({
 function DebouncedAmountInput({
   initialAmount,
   onSave,
-  id,
 }: {
   initialAmount: number;
   onSave: (amount: number) => Promise<Response>;
-  id: number;
 }) {
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialAmount.toString());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queryClient = useQueryClient();
 
   function handleChange(value: string) {
     const previousValue = text;
@@ -95,7 +87,6 @@ function DebouncedAmountInput({
         if (!res.ok) {
           throw new Error("Failed to update amount");
         }
-        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
       } catch (error) {
         setText(previousValue);
       }
@@ -115,17 +106,14 @@ function DebouncedAmountInput({
 function DebouncedGstInput({
   initialGst,
   onSave,
-  id,
 }: {
   initialGst: number;
   onSave: (gst: number) => Promise<Response>;
-  id: number;
 }) {
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialGst.toString());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queryClient = useQueryClient();
 
   function handleChange(value: string) {
     const previousValue = text;
@@ -141,7 +129,6 @@ function DebouncedGstInput({
         if (!res.ok) {
           throw new Error("Failed to update amount");
         }
-        queryClient.invalidateQueries({ queryKey: [`TransactionTaxId:${id}`] });
       } catch (error) {
         setText(previousValue);
       }
@@ -167,12 +154,12 @@ const GstTable = ({
 }: TableProps) => {
   const [tableArray, setTableArray] = useState(array);
   const [creating, setCreating] = useState(false);
+  const [changes, setChanges] = useState(false);
   useEffect(() => {
     setTableArray(array);
   }, [array]);
 
   const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-  const queryClient = useQueryClient();
   const addRow = async () => {
     try {
       setCreating(true);
@@ -199,9 +186,6 @@ const GstTable = ({
       }
       const transaction = await res.json();
       setTableArray([...tableArray, transaction]);
-      queryClient.invalidateQueries({
-        queryKey: [`TransactionTaxId:${taxId}`],
-      });
     } catch (error) {
       console.error("Failed to add row:", error);
     } finally {
@@ -222,9 +206,6 @@ const GstTable = ({
         throw new Error(`Failed to delete transaction: ${res.status}`);
       }
       setTableArray((current) => current.filter((t) => t.id !== transactionId));
-      queryClient.invalidateQueries({
-        queryKey: [`TransactionTaxId:${taxId}`],
-      });
     } catch (error) {
       console.error("Failed to delete row:", error);
     }
@@ -252,7 +233,6 @@ const GstTable = ({
             <ThemedView style={styles.tableRow}>
               <DebouncedNameInput
                 initialName={transaction.name}
-                id={transaction.taxId}
                 onSave={(name) =>
                   fetch(
                     `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
@@ -265,7 +245,6 @@ const GstTable = ({
               ></DebouncedNameInput>
               <DebouncedAmountInput
                 initialAmount={transaction.amount}
-                id={transaction.taxId}
                 onSave={(amount) =>
                   fetch(
                     `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
@@ -278,7 +257,6 @@ const GstTable = ({
               ></DebouncedAmountInput>
               <DebouncedGstInput
                 initialGst={transaction.gst}
-                id={transaction.taxId}
                 onSave={(gst) =>
                   fetch(
                     `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst?gst=${encodeURIComponent(gst)}`,

@@ -7,10 +7,8 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
-import { useQuery } from "@tanstack/react-query";
-import { router, useRouter } from "expo-router";
 
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
@@ -48,6 +46,13 @@ export default function GstReportEditorPage() {
   const [sending, setSending] = useState(false);
   const [scanning, setScanning] = useState(false);
 
+  const [taxData, setTaxData] = useState<ITaxReport | null>(null);
+  const [taxLoading, setTaxLoading] = useState(true);
+  const [taxError, setTaxError] = useState(false);
+
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsError, setTransactionsError] = useState(false);
+
   useEffect(() => {
     const getToken = async () => {
       try {
@@ -66,32 +71,65 @@ export default function GstReportEditorPage() {
     getToken();
   }, []);
 
-  const fetchReport = async (): Promise<ITaxReport> => {
-    const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return await res.json();
-  };
+  useEffect(() => {
+    if (!jwtToken || !taxId) return;
 
-  const fetchTransactions = async (): Promise<ITransactionRes[]> => {
-    const res = await fetch(
-      `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      },
-    );
+    const fetchReport = async () => {
+      setTaxLoading(true);
+      setTaxError(false);
+      try {
+        const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        });
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        setTaxData(await res.json());
+      } catch (err) {
+        console.error("Failed to fetch tax report:", err);
+        setTaxError(true);
+      } finally {
+        setTaxLoading(false);
+      }
+    };
 
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
-    }
+    fetchReport();
+  }, [jwtToken, taxId]);
 
-    return await res.json();
-  };
+  useEffect(() => {
+    if (!jwtToken || !taxId) return;
+
+    const fetchTransactions = async () => {
+      setTransactionsLoading(true);
+      setTransactionsError(false);
+      try {
+        const res = await fetch(
+          `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          },
+        );
+
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
+
+        const data: ITransactionRes[] = await res.json();
+        const sortedData = data.sort((a, b) => a.id - b.id);
+        setSoldArr(sortedData.filter((obj) => obj.type == 0));
+        setPurchaseArr(sortedData.filter((obj) => obj.type == 1));
+      } catch (err) {
+        console.error("API call failed:", err);
+        setTransactionsError(true);
+      } finally {
+        setTransactionsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [jwtToken, taxId]);
 
   const sendReport = async () => {
     try {
@@ -120,50 +158,14 @@ export default function GstReportEditorPage() {
     }
   };
 
-  const scanInvoice = async () => {
-    try {
-      setScanning(true);
-      // const res = await fetch
-    } catch (error) {
-    } finally {
-      setScanning(false);
-    }
-  };
-
-  const { data, isLoading, error } = useQuery<ITransactionRes[]>({
-    queryKey: [`TransactionTaxId:${taxId}`, jwtToken],
-    queryFn: () => fetchTransactions(),
-    enabled: !!jwtToken,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
-  });
-
-  const {
-    data: taxData,
-    isLoading: taxLoading,
-    error: taxError,
-  } = useQuery<ITaxReport>({
-    queryKey: [`Tax:${taxId}`, jwtToken],
-    queryFn: () => fetchReport(),
-    enabled: !!jwtToken,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache before refetch
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes (renamed from cacheTime in v5)
-  });
-
-  useEffect(() => {
-    if (!data) return;
-    setSoldArr(data.filter((obj) => obj.type == 0));
-    setPurchaseArr(data.filter((obj) => obj.type == 1));
-  }, [data]);
-
-  if (isLoading || taxLoading)
+  if (transactionsLoading || taxLoading)
     return (
       <ThemedView style={styles.reportContainer}>
         <ActivityIndicator />
       </ThemedView>
     );
 
-  if (error || taxError)
+  if (transactionsError || taxError)
     return (
       <ThemedView style={styles.reportContainer}>
         <ThemedText>Error loading data</ThemedText>
