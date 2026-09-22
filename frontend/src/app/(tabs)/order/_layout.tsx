@@ -16,6 +16,7 @@ export default function OrderLayout() {
     >
       <Stack.Screen name="index" options={{ title: "Vendors" }} />
       <Stack.Screen name="create_vendor" options={{ title: "New Vendor" }} />
+      <Stack.Screen name="[id]/index" options={{ title: "" }} />
     </Stack>
   );
 }

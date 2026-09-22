@@ -41,6 +41,21 @@ public class SuppliersController(
         }
     }
 
+    [HttpPost]
+    public async Task<IActionResult> Create(SupplierRequest request)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            var supplier = await suppliers.CreateAsync(me.Id, request);
+            return CreatedAtAction(nameof(GetById), new { id = supplier.Id }, supplier);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("{supplierId:int}/item")]
     public async Task<IActionResult> CreateItem(int supplierId, ItemRequest req)
     {

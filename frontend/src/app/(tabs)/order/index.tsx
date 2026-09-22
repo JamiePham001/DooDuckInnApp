@@ -71,6 +71,7 @@ export default function orderPage() {
   const SupplierList = ({ data }: { data: ISupplier[] | undefined }) => {
     const scheme = useColorScheme();
     const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+    const router = useRouter();
 
     return (
       <ThemedView style={styles.contentContainer}>
@@ -89,26 +90,28 @@ export default function orderPage() {
             <ThemedText>Data is empty</ThemedText>
           </ThemedView>
         ) : (
-          data?.map((supplier) => (
-            <SwipeToDelete
-              key={supplier.id}
-              confirmMessage={`Delete the supplier ${supplier.name}? This can't be undone.`}
-              onDelete={() => deleteSupplier(supplier.id)}
-              borderRadius={20}
-            >
-              <Pressable
-                style={styles.row}
-                onPress={() =>
-                  router.push({
-                    pathname: "/order/[id]",
-                    params: { id: supplier.id.toString() },
-                  })
-                }
+          <ThemedView style={{ alignSelf: "flex-start", width: "100%" }}>
+            {data?.map((supplier) => (
+              <SwipeToDelete
+                key={supplier.id}
+                confirmMessage={`Delete the supplier ${supplier.name}? This can't be undone.`}
+                onDelete={() => deleteSupplier(supplier.id)}
+                borderRadius={20}
               >
-                <ThemedText>{supplier.name}</ThemedText>
-              </Pressable>
-            </SwipeToDelete>
-          ))
+                <Pressable
+                  style={styles.row}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/order/[id]",
+                      params: { id: supplier.id.toString() },
+                    })
+                  }
+                >
+                  <ThemedText>{supplier.name}</ThemedText>
+                </Pressable>
+              </SwipeToDelete>
+            ))}
+          </ThemedView>
         )}
       </ThemedView>
     );
@@ -140,8 +143,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     width: "100%",
   },
   dataMessage: {
