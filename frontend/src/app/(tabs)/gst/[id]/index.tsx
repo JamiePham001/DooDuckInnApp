@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,9 +7,15 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 
+import { consumePendingScannedTransactionId } from "@/utils/scan-signal";
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
 import { formatDateRange } from "@/utils/format-date-range";
@@ -52,6 +58,7 @@ export default function GstReportEditorPage() {
 
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsError, setTransactionsError] = useState(false);
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   useEffect(() => {
     const getToken = async () => {
@@ -94,42 +101,60 @@ export default function GstReportEditorPage() {
     fetchReport();
   }, [jwtToken, taxId]);
 
-  useEffect(() => {
-    if (!jwtToken || !taxId) return;
+  // Refetches on every screen focus, not just on mount — this is what refreshes
+  // the tables when navigating back from camera.tsx after a scan, without needing
+  // a caching library to bridge the two screens.
+  useFocusEffect(
+    useCallback(() => {
+      if (!jwtToken || !taxId) return;
 
-    const fetchTransactions = async () => {
-      setTransactionsLoading(true);
-      setTransactionsError(false);
-      try {
-        const res = await fetch(
-          `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${jwtToken}`,
+      const fetchTransactions = async () => {
+        setTransactionsLoading(true);
+        setTransactionsError(false);
+        try {
+          const res = await fetch(
+            `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${jwtToken}`,
+              },
             },
-          },
-        );
+          );
 
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
+          if (!res.ok) {
+            throw new Error(`API error: ${res.status}`);
+          }
+
+          const data: ITransactionRes[] = await res.json();
+          const sortedData = data.sort((a, b) => a.id - b.id);
+          setSoldArr(sortedData.filter((obj) => obj.type == 0));
+          setPurchaseArr(sortedData.filter((obj) => obj.type == 1));
+
+          // Non-null only right after returning from a scan — camera.tsx sets
+          // this immediately before calling router.back().
+          const scannedId = consumePendingScannedTransactionId();
+          if (scannedId !== null) setHighlightId(scannedId);
+        } catch (err) {
+          console.error("API call failed:", err);
+          setTransactionsError(true);
+        } finally {
+          setTransactionsLoading(false);
         }
+      };
 
-        const data: ITransactionRes[] = await res.json();
-        const sortedData = data.sort((a, b) => a.id - b.id);
-        setSoldArr(sortedData.filter((obj) => obj.type == 0));
-        setPurchaseArr(sortedData.filter((obj) => obj.type == 1));
-      } catch (err) {
-        console.error("API call failed:", err);
-        setTransactionsError(true);
-      } finally {
-        setTransactionsLoading(false);
-      }
-    };
+      fetchTransactions();
+    }, [jwtToken, taxId]),
+  );
 
-    fetchTransactions();
-  }, [jwtToken, taxId]);
+  // Clears the highlight after the pulse has had time to play, so it doesn't
+  // linger (or reappear) on a later, unrelated focus of this screen.
+  useEffect(() => {
+    if (highlightId === null) return;
+    const timer = setTimeout(() => setHighlightId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [highlightId]);
 
   const sendReport = async () => {
     try {
@@ -171,8 +196,9 @@ export default function GstReportEditorPage() {
         <ThemedText>Error loading data</ThemedText>
       </ThemedView>
     );
+
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
       <Stack.Screen
         options={{
           title: taxData
@@ -226,6 +252,7 @@ export default function GstReportEditorPage() {
             jwtToken={jwtToken}
             taxId={taxId}
             transactionType={0}
+            highlightId={highlightId}
           ></GstTable>
           <GstTable
             title="Purchases"
@@ -233,6 +260,7 @@ export default function GstReportEditorPage() {
             jwtToken={jwtToken}
             taxId={taxId}
             transactionType={1}
+            highlightId={highlightId}
           ></GstTable>
         </ThemedView>
       </ThemedView>

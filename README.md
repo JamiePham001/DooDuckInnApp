@@ -2,6 +2,10 @@
 
 A business mobile application striving to help my dad become self sufficient in writing his own GST reports and simplifying ordering stock from suppliers via email. Creating a personalised experience that focuses on intuitive navigation and UI using his native Vietnamese language. The app will make use of Claude AI workflows to scan invoices, and automate producing documents and emails.
 
+## Objectives
+
+1.
+
 ## Tech Stack
 
 - Frontend: React Native Expo
@@ -32,7 +36,11 @@ A business mobile application striving to help my dad become self sufficient in 
   - formatting output configuration from AI response
   - embedding dynamic parameters into instructions
   - processing image requests with AI workflows into useable and interactable data.
-- React Native
+- React Native / Expo
+  - splash screens
+  - swipe actions
+  - camera feature and retrieving image data
+  - useFocusEffect
 
 ## What I Can Improve On
 

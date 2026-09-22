@@ -30,16 +30,6 @@ function getDevMenuHint() {
   );
 }
 
-const SignOutButton = () => {
-  const { signOut } = useAuthenticator();
-
-  return (
-    <View style={styles.signOutButton}>
-      <Button title="Sign Out" onPress={signOut} />
-    </View>
-  );
-};
-
 export default function HomeScreen() {
   return (
     <View>

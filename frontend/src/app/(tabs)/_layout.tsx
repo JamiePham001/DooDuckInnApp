@@ -87,6 +87,7 @@ export default function TabLayout() {
           name="order"
           options={{
             title: "Order",
+            headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <AnimatedTabItem
                 size={iconSize}

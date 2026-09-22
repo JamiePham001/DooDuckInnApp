@@ -3,6 +3,14 @@ import { TextInput, TouchableOpacity, Platform } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -23,6 +31,45 @@ interface TableProps {
   jwtToken: string;
   transactionType: number;
   taxId: number;
+  highlightId?: number | null;
+}
+
+function PulsingRow({
+  highlighted,
+  children,
+}: {
+  highlighted: boolean;
+  children: React.ReactNode;
+}) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    if (highlighted) {
+      // Pulses 3 times (~2.4s total) then settles back to the normal row color.
+      progress.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 400 }),
+          withTiming(0, { duration: 400 }),
+        ),
+        3,
+        false,
+      );
+    }
+  }, [highlighted]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      ["#ffffff", "#fff3b0"],
+    ),
+  }));
+
+  return (
+    <Animated.View style={[styles.tableRow, animatedStyle]}>
+      {children}
+    </Animated.View>
+  );
 }
 
 function DebouncedNameInput({
@@ -151,6 +198,7 @@ const GstTable = ({
   jwtToken,
   taxId,
   transactionType,
+  highlightId,
 }: TableProps) => {
   const [tableArray, setTableArray] = useState(array);
   const [creating, setCreating] = useState(false);
@@ -230,7 +278,7 @@ const GstTable = ({
             onDelete={() => deleteRow(transaction.id)}
             borderRadius={0}
           >
-            <ThemedView style={styles.tableRow}>
+            <PulsingRow highlighted={transaction.id === highlightId}>
               <DebouncedNameInput
                 initialName={transaction.name}
                 onSave={(name) =>
@@ -267,7 +315,7 @@ const GstTable = ({
                   )
                 }
               ></DebouncedGstInput>
-            </ThemedView>
+            </PulsingRow>
           </SwipeToDelete>
         ))}
         <TouchableOpacity
