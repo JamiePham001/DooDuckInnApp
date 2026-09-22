@@ -14,9 +14,14 @@ export default function OrderLayout() {
         headerStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Vendors" }} />
-      <Stack.Screen name="create_vendor" options={{ title: "New Vendor" }} />
+      <Stack.Screen name="index" options={{ title: "Suppliers" }} />
+      <Stack.Screen name="create_vendor" options={{ title: "New Supplier" }} />
       <Stack.Screen name="[id]/index" options={{ title: "" }} />
+      <Stack.Screen
+        name="[id]/edit_vendor"
+        options={{ title: "Edit Supplier" }}
+      />
+      <Stack.Screen name="[id]/send_order" options={{ title: "Send Order" }} />
     </Stack>
   );
 }

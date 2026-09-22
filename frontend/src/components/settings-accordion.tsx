@@ -69,12 +69,6 @@ export function SettingsAccordion({ visible, onClose }: Props) {
         onPress={onClose}
       />
       <SettingsRow
-        icon="person-circle-outline"
-        filledIcon="person-circle"
-        label="Personal Details"
-        onPress={onClose}
-      />
-      <SettingsRow
         icon="log-out-outline"
         filledIcon="log-out"
         label="Log Out"

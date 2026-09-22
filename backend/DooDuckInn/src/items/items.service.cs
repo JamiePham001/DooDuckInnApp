@@ -39,7 +39,7 @@ public class ItemsService(AppDbContext db)
         if (supplier is null) throw new KeyNotFoundException($"Supplier {suppId} not found.");
         await CheckSuppUserId(supplier.Id, jwtUserId);
 
-        var item = new Item(suppId, req.name);
+        var item = new Item(suppId);
         db.Items.Add(item);
         await db.SaveChangesAsync();
         return item;

@@ -8,12 +8,10 @@ public sealed class Item
     public string Name { get; private set; } = default!;
     public int Quantity { get; private set; } = 0;
 
-    public Item(int supplierId, string name)
+    public Item(int supplierId)
     {
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name is required");
-
         SupplierId = supplierId;
-        Name = name;
+        Name = string.Empty;
     }
 
     public void UpdateQuantity(int qty)

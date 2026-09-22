@@ -4,6 +4,7 @@ using DooDuckInn.src.suppliers;
 using DooDuckInn.src.taxes;
 using DooDuckInn.src.items;
 using DooDuckInn.src.transactions;
+using DooDuckInn.src.digests;
 
 namespace DooDuckInn.src.db;
 
@@ -16,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Tax> Taxes => Set<Tax>();
     public DbSet<Item> Items => Set<Item>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<DigestItem> Digests => Set<DigestItem>();
 
     // Scans this assembly for every IEntityTypeConfiguration<T> (UserConfiguration, and any
     // SupplierConfiguration/TaxConfiguration added later) and applies them automatically.

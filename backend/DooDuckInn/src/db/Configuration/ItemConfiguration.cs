@@ -21,7 +21,7 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(i => i.Name).HasMaxLength(150).IsRequired();
+        builder.Property(i => i.Name).HasMaxLength(150);
 
         builder.Property(i => i.Quantity).HasDefaultValue(0);
 

@@ -6,6 +6,7 @@ using DooDuckInn.src.taxes;
 using DooDuckInn.src.items;
 using DooDuckInn.src.transactions;
 using DooDuckInn.src.email;
+using DooDuckInn.src.digests;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
@@ -68,6 +69,10 @@ builder.Services.AddScoped<SuppliersService>();
 builder.Services.AddScoped<ItemsService>();
 builder.Services.AddScoped<TransactionsService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<DigestsService>();
+builder.Services.AddScoped<DigestAgent>();
+builder.Services.AddScoped<GmailClient>();
+builder.Services.AddHostedService<DailyDigestBackgroundService>();
 
 var app = builder.Build();
 

@@ -56,6 +56,20 @@ public class SuppliersController(
         }
     }
 
+    [HttpGet("{id}/items")]
+    public async Task<IActionResult> GetItems(int id)
+    {
+        try
+        {
+            var me = await CurrentUserAsync();
+            return Ok(await items.GetBySupplierId(id, me.Id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
     [HttpPost("{supplierId:int}/item")]
     public async Task<IActionResult> CreateItem(int supplierId, ItemRequest req)
     {
