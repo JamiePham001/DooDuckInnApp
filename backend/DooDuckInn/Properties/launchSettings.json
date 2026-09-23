@@ -5,10 +5,6 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      // 0.0.0.0 (not "localhost") — binding to loopback only means a physical
-      // phone on the same Wi-Fi can never reach this, no matter what address the
-      // app points at. This opens the port to your whole LAN, which is fine for
-      // local dev but not something to carry into a real deployment.
       "applicationUrl": "http://0.0.0.0:5010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

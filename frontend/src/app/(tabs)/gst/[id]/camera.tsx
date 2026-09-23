@@ -22,7 +22,7 @@ const InvoiceScan = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useI18n();
-
+  const [processing, setProcessing] = useState(false);
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -83,7 +83,10 @@ const InvoiceScan = () => {
 
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) setUri(photo.uri);
+    if (photo?.uri) {
+      setProcessing(true);
+      setUri(photo.uri);
+    }
   };
 
   const renderPicture = (uri: string) => {
@@ -103,7 +106,10 @@ const InvoiceScan = () => {
             title={t("gst.retake")}
             icon="refresh-outline"
             variant="secondary"
-            onPress={() => setUri(null)}
+            onPress={() => {
+              setUri(null);
+              setProcessing(false);
+            }}
             disabled={scanning}
             style={styles.previewAction}
           />
@@ -134,7 +140,7 @@ const InvoiceScan = () => {
           mode={"picture"}
         />
         <View style={styles.buttonContainer}>
-          <Pressable onPress={takePicture}>
+          <Pressable onPress={takePicture} disabled={processing}>
             {({ pressed }) => (
               <View style={[styles.shutterBtn, { opacity: pressed ? 0.5 : 1 }]}>
                 <View style={styles.shutterBtnInner} />
