@@ -1,146 +1,81 @@
-import { Image } from 'expo-image';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+import { useSchemeName } from '@/hooks/use-theme';
 
-export function AnimatedSplashOverlay() {
+// Must match the expo-splash-screen plugin's backgroundColor (and its `dark` variant) in
+// app.json. The native splash deliberately has NO image — it is a bare colour field that
+// this overlay continues seamlessly, which is why the duck can animate in over it without
+// a visible handoff.
+const SPLASH_BACKGROUND = { light: '#1877F2', dark: '#0C0D0F' } as const;
+const DURATION = 900;
+
+// The whole blue field holds, then fades to reveal the app underneath.
+const overlayKeyframe = new Keyframe({
+  0: { opacity: 1 },
+  70: { opacity: 1 },
+  100: { opacity: 0, easing: Easing.in(Easing.cubic) },
+});
+
+// The duck pops in with a slight overshoot, then drifts fractionally larger as the field
+// fades — so it reads as one intentional beat rather than an image appearing late.
+const duckKeyframe = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.6 }] },
+  35: { opacity: 1, transform: [{ scale: 1 }], easing: Easing.out(Easing.back(1.6)) },
+  100: { opacity: 1, transform: [{ scale: 1.08 }], easing: Easing.in(Easing.cubic) },
+});
+
+/**
+ * Covers the app until `ready`, then plays the duck in and fades away to reveal it. Owns
+ * the only SplashScreen.hideAsync() call in the app — see the comment in app/_layout.tsx.
+ */
+export function AnimatedSplashOverlay({ ready }: { ready: boolean }) {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
+  const backgroundColor = SPLASH_BACKGROUND[useSchemeName()];
+
+  useEffect(() => {
+    // Driven by an effect rather than onLayout: the overlay mounts on first render while
+    // `ready` is still false, so an onLayout handler would fire once, too early, and never
+    // run again when `ready` flips.
+    if (ready && !animate) {
+      SplashScreen.hideAsync().finally(() => setAnimate(true));
+    }
+  }, [ready, animate]);
 
   if (!visible) return null;
 
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: 1 }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  });
+  // Until the native splash is hidden this is just a colour-matched backdrop with no duck:
+  // the entrance would otherwise play unseen underneath the native splash and be over by
+  // the time anyone could see it.
+  if (!animate) {
+    return <View style={[styles.splashOverlay, { backgroundColor }]} />;
+  }
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
-
-  return animate ? (
+  return (
     <Animated.View
-      entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
+      pointerEvents="none"
+      entering={overlayKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet';
         if (finished) {
           scheduleOnRN(setVisible, false);
         }
       })}
-      style={styles.splashOverlay}>
-      {image}
+      style={[styles.splashOverlay, { backgroundColor }]}>
+      <Animated.View entering={duckKeyframe.duration(DURATION)}>
+        <MaterialCommunityIcons name="duck" size={112} color="#FFFFFF" />
+      </Animated.View>
     </Animated.View>
-  ) : (
-    <View
-      onLayout={() => {
-        SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
-        });
-      }}
-      style={styles.splashOverlay}>
-      {image}
-    </View>
-  );
-}
-
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: INITIAL_SCALE_FACTOR }],
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const logoKeyframe = new Keyframe({
-  0: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-  },
-  40: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    opacity: 1,
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-});
-
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '0deg' }],
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
-
-export function AnimatedIcon() {
-  return (
-    <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
-
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
-      </Animated.View>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  imageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
-    zIndex: 100,
-  },
-  image: {
-    width: 76,
-    height: 71,
-  },
-  background: {
-    borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
-    width: 128,
-    height: 128,
-    position: 'absolute',
-  },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

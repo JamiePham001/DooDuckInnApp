@@ -7,10 +7,16 @@ import Animated, {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAuthenticator } from "@aws-amplify/ui-react-native";
 
-import { BottomTabInset, Spacing } from "@/constants/theme";
-
-const ACTIVE_COLOR = "#ffffff";
-const INACTIVE_COLOR = "#acc8ee";
+import {
+  BottomTabInset,
+  Hairline,
+  Motion,
+  Radius,
+  Shadow,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
   visible: boolean;
@@ -28,16 +34,23 @@ function SettingsRow({
   label: string;
   onPress: () => void;
 }) {
+  const colors = useTheme();
+
   return (
     <Pressable onPress={onPress} style={styles.row}>
       {({ pressed }) => (
         <>
           <Ionicons
             name={pressed ? filledIcon : icon}
-            size={18}
-            color={pressed ? ACTIVE_COLOR : INACTIVE_COLOR}
+            size={20}
+            color={pressed ? colors.accent : colors.textSecondary}
           />
-          <Text style={[styles.text, pressed && styles.textPressed]}>
+          <Text
+            style={[
+              styles.text,
+              { color: pressed ? colors.accent : colors.text },
+            ]}
+          >
             {label}
           </Text>
         </>
@@ -47,19 +60,32 @@ function SettingsRow({
 }
 
 export function SettingsAccordion({ visible, onClose }: Props) {
+  const colors = useTheme();
+
   const style = useAnimatedStyle(() => ({
-    // Content is 3 fixed-height rows — a real max-content height, not "100%" (which
-    // measures against the whole screen and overshoots). overflow:hidden on the
+    // Content is a couple of fixed-height rows — a real max-content height, not "100%"
+    // (which measures against the whole screen and overshoots). overflow:hidden on the
     // container clips them as this shrinks, instead of letting them poke out the
     // bottom and visually "bunch" into the tab bar mid-collapse.
-    maxHeight: withTiming(visible ? 200 : 0, { duration: 250 }),
+    maxHeight: withTiming(visible ? 200 : 0, { duration: Motion.base }),
   }));
 
   const { signOut } = useAuthenticator();
 
   return (
     <Animated.View
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          // A light sheet rather than the tab bar's blue: dark-on-white is far easier to
+          // read than the pale-blue-on-blue it used to be. The shadow is what separates
+          // it from the screen content it slides over.
+          ...Shadow.raised,
+        },
+        style,
+      ]}
       pointerEvents={visible ? "auto" : "none"}
     >
       <SettingsRow
@@ -84,7 +110,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: BottomTabInset,
-    backgroundColor: "#1877F2",
+    borderTopWidth: Hairline,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
     overflow: "hidden",
   },
   row: {
@@ -94,11 +122,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.five,
   },
-  text: {
-    color: INACTIVE_COLOR,
-    fontSize: 18,
-  },
-  textPressed: {
-    color: ACTIVE_COLOR,
-  },
+  text: Typography.body,
 });

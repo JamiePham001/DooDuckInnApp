@@ -25,7 +25,7 @@ public class DigestAgent(AnthropicClient client)
         }, required: ["priority", "summary"]);
 
         var text = await CallAsync(schema, $"""
-        You are triaging inbox email for a takeaway shop owner. Sender: "{senderName}".
+        You are triaging inbox email for a takeaway shop owner for business and personal. Sender: "{senderName}".
         Subject: "{subject}". Preview: "{snippet}".
         Classify urgency (Critical = needs action today/urgent supplier or compliance issue,
         High = important but not urgent, Medium = routine, Low = newsletter/promo/noise) and

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "Doo Duck Inn",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,9 +29,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#1877F2",
+          "dark": {
+            "backgroundColor": "#0C0D0F"
+          }
         }
       ],
       [

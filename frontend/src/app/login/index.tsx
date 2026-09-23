@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { signIn } from "aws-amplify/auth";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import { Radius, Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 const USERNAME = process.env.EXPO_PUBLIC_LOGIN_USERNAME!;
@@ -47,9 +50,13 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
-        Doo Duck Inn
-      </ThemedText>
+      <View style={styles.brand}>
+        <MaterialCommunityIcons name="duck" size={64} color={theme.accent} />
+        <ThemedText style={styles.title}>Doo Duck Inn</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+          Enter your PIN to continue
+        </ThemedText>
+      </View>
 
       <View style={styles.dotsRow}>
         {Array.from({ length: PIN_LENGTH }).map((_, i) => (
@@ -57,29 +64,40 @@ export default function LoginScreen() {
             key={i}
             style={[
               styles.dot,
-              { borderColor: theme.text },
-              i < pin.length && { backgroundColor: theme.text },
+              { borderColor: theme.border },
+              i < pin.length && {
+                backgroundColor: theme.accent,
+                borderColor: theme.accent,
+              },
             ]}
           />
         ))}
       </View>
 
-      <ThemedText type="small" themeColor="text" style={styles.error}>
+      <ThemedText style={[styles.error, { color: theme.critical }]}>
         {error}
       </ThemedText>
 
       <View style={styles.pad}>
         {PAD_KEYS.map((key, i) => (
-          <Pressable
+          <PressableScale
             key={i}
-            style={[styles.key, key === "" && styles.keyHidden]}
+            scaleTo={0.9}
+            style={[
+              styles.key,
+              key !== "" && {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+              key === "" && styles.keyHidden,
+            ]}
             onPress={() => handleKeyPress(key)}
             disabled={key === "" || submitting}
           >
-            <ThemedText type="title" style={styles.keyText}>
+            <ThemedText style={styles.keyText}>
               {key === "del" ? "⌫" : key}
             </ThemedText>
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
     </ThemedView>
@@ -90,47 +108,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingTop: 100,
-    gap: 50,
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.four,
   },
-  title: {
-    textAlign: "center",
-    fontSize: 30,
-    paddingBottom: 85,
+  brand: {
+    alignItems: "center",
+    gap: Spacing.two,
+    paddingBottom: Spacing.five,
   },
+  title: { ...Typography.display, textAlign: "center" },
+  subtitle: { ...Typography.secondary, textAlign: "center" },
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 20,
+    gap: Spacing.four,
   },
   dot: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: Radius.pill,
     borderWidth: 1.5,
   },
-  error: {
-    color: "#e5484d",
-    textAlign: "center",
-  },
+  error: { ...Typography.secondary, textAlign: "center", minHeight: 21 },
   pad: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
+    gap: Spacing.three,
     maxWidth: 300,
     alignSelf: "center",
   },
   key: {
-    width: 84,
-    height: 84,
+    width: 76,
+    height: 76,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: Radius.pill,
+    borderWidth: 1,
   },
-  keyHidden: {
-    opacity: 0,
-  },
-  keyText: {
-    fontSize: 28,
-  },
+  keyHidden: { opacity: 0 },
+  keyText: { ...Typography.display, fontWeight: "600" },
 });

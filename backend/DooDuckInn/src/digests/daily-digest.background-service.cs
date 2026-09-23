@@ -4,11 +4,7 @@ namespace DooDuckInn.src.digests;
 // framework needed for a single daily job. Recomputes the delay each iteration (rather than a
 // fixed 24h interval) so any daylight saving changes don't drift the trigger time (Perth
 // currently doesn't observe DST, but this stays correct if that ever changes).
-//
-// Note: the target is Perth (where the shop actually is), not Sydney — the Lambda region
-// (Sydney, per CLAUDE.md's hosting plan) doesn't matter here, since TimeZoneInfo conversion is
-// done explicitly off UTC rather than off the server's local clock.
-//
+
 // NOTE: this assumes an always-running host (fine for `dotnet run` / a container). If this ever
 // deploys to AWS Lambda, a long-lived BackgroundService won't reliably fire between invocations —
 // an EventBridge Scheduler rule invoking the Lambda directly at 12pm Perth time would be the

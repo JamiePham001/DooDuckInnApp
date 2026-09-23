@@ -4,19 +4,30 @@ import {
   Alert,
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  View,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery } from "@tanstack/react-query";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { SwipeToDelete } from "@/components/swipe-to-delete";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import {
+  Hairline,
+  Radius,
+  Shadow,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 interface ISupplier {
   id: number;
@@ -68,6 +79,7 @@ function DebouncedItemNameInput({
   initialName: string;
   onSave: (name: string) => Promise<Response>;
 }) {
+  const colors = useTheme();
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,7 +102,14 @@ function DebouncedItemNameInput({
     <TextInput
       value={name}
       onChangeText={handleChange}
-      style={{ flex: 2, textAlign: "left", fontSize: 12 }}
+      placeholder="Item name"
+      placeholderTextColor={colors.textSecondary}
+      style={{
+        flex: 2,
+        textAlign: "left",
+        color: colors.text,
+        ...Typography.secondary,
+      }}
     />
   );
 }
@@ -102,6 +121,7 @@ function DebouncedItemQtyInput({
   initialQty: number;
   onSave: (qty: number) => Promise<Response>;
 }) {
+  const colors = useTheme();
   // Kept as a raw string, not a number — coercing on every keystroke drops
   // characters a user is still mid-typing (e.g. a leading "0").
   const [text, setText] = useState(initialQty.toString());
@@ -130,7 +150,13 @@ function DebouncedItemQtyInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="number-pad"
-      style={{ flex: 1, textAlign: "left", fontSize: 12 }}
+      placeholderTextColor={colors.textSecondary}
+      style={{
+        flex: 1,
+        textAlign: "left",
+        color: colors.text,
+        ...Typography.secondary,
+      }}
     />
   );
 }
@@ -139,6 +165,7 @@ export default function VendorDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const supplierId = Number(id);
   const router = useRouter();
+  const colors = useTheme();
   const [jwtToken, setJwtToken] = useState("");
   const [itemsArray, setItemsArray] = useState<IItem[]>([]);
   const [creating, setCreating] = useState(false);
@@ -234,137 +261,220 @@ export default function VendorDetailPage() {
   if (supplierError || itemsError || !supplier)
     return (
       <ThemedView style={styles.centered}>
-        <ThemedText>Error loading vendor</ThemedText>
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={colors.critical}
+        />
+        <ThemedText style={styles.messageTitle}>
+          Couldn&apos;t load this vendor
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.messageBody}>
+          Check your connection and try again.
+        </ThemedText>
       </ThemedView>
     );
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <ThemedView style={styles.screen}>
       <Stack.Screen options={{ title: supplier.name }} />
-      <ThemedView style={styles.header}>
-        {!!supplier.phone && (
-          <Pressable onPress={callVendor}>
-            <ThemedText style={styles.phoneLink}>{supplier.phone}</ThemedText>
-          </Pressable>
-        )}
-      </ThemedView>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Card style={styles.contactCard}>
+          <ThemedText style={styles.vendorName}>{supplier.name}</ThemedText>
+          {!!supplier.email && (
+            <View style={styles.contactRow}>
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <ThemedText themeColor="textSecondary" style={styles.contactText}>
+                {supplier.email}
+              </ThemedText>
+            </View>
+          )}
+          {!!supplier.phone && (
+            <PressableScale onPress={callVendor} style={styles.contactRow}>
+              <Ionicons name="call-outline" size={18} color={colors.accent} />
+              <ThemedText style={[styles.contactText, { color: colors.accent }]}>
+                {supplier.phone}
+              </ThemedText>
+            </PressableScale>
+          )}
+        </Card>
 
-      <ThemedView style={styles.actionsRow}>
-        <Pressable
-          style={styles.button}
-          onPress={() =>
-            router.push({
-              pathname: "/order/[id]/edit_vendor",
-              params: { id },
-            })
-          }
-        >
-          <ThemedText>Edit Details</ThemedText>
-        </Pressable>
-        <Pressable
-          style={styles.button}
-          onPress={() =>
-            router.push({
-              pathname: "/order/[id]/send_order",
-              params: { id },
-            })
-          }
-        >
-          <ThemedText>Send Order</ThemedText>
-        </Pressable>
-      </ThemedView>
+        <View style={styles.actionsRow}>
+          <Button
+            title="Edit"
+            icon="create-outline"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: "/order/[id]/edit_vendor",
+                params: { id },
+              })
+            }
+            style={styles.action}
+          />
+          <Button
+            title="Send order"
+            icon="paper-plane-outline"
+            onPress={() =>
+              router.push({
+                pathname: "/order/[id]/send_order",
+                params: { id },
+              })
+            }
+            style={styles.action}
+          />
+        </View>
 
-      <ThemedView style={styles.pageContainer}>
-        <ThemedView style={styles.tableContainer}>
-          <ThemedView style={styles.tableRow}>
-            <ThemedText style={{ flex: 2, textAlign: "left" }}>Name</ThemedText>
-            <ThemedText style={{ flex: 1, textAlign: "left" }}>Qty</ThemedText>
-          </ThemedView>
-          {itemsArray.map((item) => (
-            <SwipeToDelete
-              key={item.id}
-              confirmMessage={`Delete "${item.name || "this item"}"? This can't be undone.`}
-              onDelete={() => deleteItem(item.id)}
-              borderRadius={0}
-            >
-              <ThemedView style={styles.tableRow}>
-                <DebouncedItemNameInput
-                  initialName={item.name}
-                  onSave={(name) =>
-                    fetch(
-                      `http://${API_HOST}:5010/api/items/${item.id}/update/name?name=${encodeURIComponent(name)}`,
-                      {
-                        method: "PATCH",
-                        headers: { Authorization: `Bearer ${jwtToken}` },
-                      },
-                    )
-                  }
-                />
-                <DebouncedItemQtyInput
-                  initialQty={item.quantity}
-                  onSave={(qty) =>
-                    fetch(
-                      `http://${API_HOST}:5010/api/items/${item.id}/update/quantity?qty=${qty}`,
-                      {
-                        method: "PATCH",
-                        headers: { Authorization: `Bearer ${jwtToken}` },
-                      },
-                    )
-                  }
-                />
-              </ThemedView>
-            </SwipeToDelete>
-          ))}
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={addItem}
-            disabled={creating}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Items</ThemedText>
+          <ThemedView
+            style={[
+              styles.tableContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <ThemedText>+</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-    </ScrollView>
+            <ThemedView
+              style={[
+                styles.tableRow,
+                styles.headerRow,
+                { backgroundColor: colors.surface },
+              ]}
+            >
+              <ThemedText themeColor="textSecondary" style={styles.headerCell2}>
+                Name
+              </ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
+                Qty
+              </ThemedText>
+            </ThemedView>
+
+            {itemsArray.map((item) => (
+              <SwipeToDelete
+                key={item.id}
+                confirmMessage={`Delete "${item.name || "this item"}"? This can't be undone.`}
+                onDelete={() => deleteItem(item.id)}
+                borderRadius={0}
+              >
+                <ThemedView
+                  style={[
+                    styles.tableRow,
+                    {
+                      backgroundColor: colors.surface,
+                      borderTopColor: colors.border,
+                    },
+                  ]}
+                >
+                  <DebouncedItemNameInput
+                    initialName={item.name}
+                    onSave={(name) =>
+                      fetch(
+                        `http://${API_HOST}:5010/api/items/${item.id}/update/name?name=${encodeURIComponent(name)}`,
+                        {
+                          method: "PATCH",
+                          headers: { Authorization: `Bearer ${jwtToken}` },
+                        },
+                      )
+                    }
+                  />
+                  <DebouncedItemQtyInput
+                    initialQty={item.quantity}
+                    onSave={(qty) =>
+                      fetch(
+                        `http://${API_HOST}:5010/api/items/${item.id}/update/quantity?qty=${qty}`,
+                        {
+                          method: "PATCH",
+                          headers: { Authorization: `Bearer ${jwtToken}` },
+                        },
+                      )
+                    }
+                  />
+                </ThemedView>
+              </SwipeToDelete>
+            ))}
+
+            <PressableScale
+              style={[
+                styles.addRow,
+                {
+                  backgroundColor: colors.accentSoft,
+                  borderTopColor: colors.border,
+                },
+              ]}
+              onPress={addItem}
+              disabled={creating}
+            >
+              <Ionicons name="add" size={18} color={colors.accent} />
+              <ThemedText style={[styles.addRowText, { color: colors.accent }]}>
+                Add item
+              </ThemedText>
+            </PressableScale>
+          </ThemedView>
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { padding: 20, gap: 6 },
-  phoneLink: { color: "#1877F2", textDecorationLine: "underline" },
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
+    gap: Spacing.three,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  pageContainer: { paddingHorizontal: 20, width: "100%" },
-  tableContainer: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  tableRow: {
-    backgroundColor: "white",
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#f1f1f1",
-    height: 45,
-    paddingHorizontal: 10,
-    alignItems: "center",
-  },
-  addBtn: {
-    width: "100%",
+  centered: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    height: 30,
-    backgroundColor: "#1877F2",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
   },
+  messageTitle: { ...Typography.title, textAlign: "center" },
+  messageBody: { ...Typography.secondary, textAlign: "center" },
+  contactCard: { gap: Spacing.two },
+  vendorName: Typography.title,
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    minHeight: 32,
+  },
+  contactText: Typography.secondary,
+  actionsRow: { flexDirection: "row", gap: Spacing.three },
+  action: { flex: 1 },
+  section: { gap: Spacing.two },
+  sectionTitle: Typography.heading,
+  tableContainer: {
+    width: "100%",
+    borderRadius: Radius.lg,
+    borderWidth: Hairline,
+    overflow: "hidden",
+    ...Shadow.card,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderTopWidth: Hairline,
+    minHeight: 48,
+    paddingHorizontal: Spacing.three,
+    alignItems: "center",
+    gap: Spacing.two,
+  },
+  headerRow: { borderTopWidth: 0 },
+  headerCell2: { ...Typography.caption, flex: 2, textAlign: "left" },
+  headerCell1: { ...Typography.caption, flex: 1, textAlign: "left" },
+  addRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.one,
+    minHeight: 44,
+    borderTopWidth: Hairline,
+  },
+  addRowText: Typography.caption,
 });

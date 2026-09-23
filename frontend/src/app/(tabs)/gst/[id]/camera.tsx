@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  StyleSheet,
-  Pressable,
-  TouchableOpacity,
-  Button,
-  Platform,
-  Alert,
-} from "react-native";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { StyleSheet, Pressable, View, Platform, Alert } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
+import { Button } from "@/components/ui/button";
+import { Spacing, Typography } from "@/constants/theme";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -53,16 +48,14 @@ const InvoiceScan = () => {
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
-      <ThemedView style={styles.container}>
-        <ThemedText style={styles.message}>
-          We need your permission to show the camera
+      <ThemedView style={styles.permission}>
+        <ThemedText style={styles.permissionTitle}>
+          Camera access needed
         </ThemedText>
-        <Pressable
-          onPress={requestPermission}
-          style={{ backgroundColor: "blue" }}
-        >
-          <ThemedText style={styles.message}>grant permission</ThemedText>
-        </Pressable>
+        <ThemedText themeColor="textSecondary" style={styles.message}>
+          Allow camera access so you can scan receipts and invoices.
+        </ThemedText>
+        <Button title="Grant permission" onPress={requestPermission} />
       </ThemedView>
     );
   }
@@ -111,45 +104,33 @@ const InvoiceScan = () => {
 
   const renderPicture = (uri: string) => {
     return (
-      <ThemedView
-        style={{
-          alignItems: "center",
-          // justifyContent: "center",
-          flex: 1,
-          paddingHorizontal: 20,
-        }}
-      >
+      <ThemedView style={styles.preview}>
+        <Stack.Screen options={{ title: "Check the photo" }} />
         <Image
           source={{ uri }}
           contentFit="contain"
-          style={{ width: 600, aspectRatio: 1 }}
+          style={styles.previewImage}
         />
-        <ThemedView
-          style={{ alignItems: "center", width: "100%", paddingTop: 10 }}
-        >
-          <ThemedText>
-            Make sure the invoice is in frame and well lit before scanning.
-          </ThemedText>
-        </ThemedView>
-        <ThemedView
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            width: "100%",
-            paddingTop: 20,
-          }}
-        >
+        <ThemedText themeColor="textSecondary" style={styles.message}>
+          Make sure the invoice is in frame and well lit before scanning.
+        </ThemedText>
+        <View style={styles.previewActions}>
           <Button
+            title="Retake"
+            icon="refresh-outline"
+            variant="secondary"
             onPress={() => setUri(null)}
-            title="Take another picture"
             disabled={scanning}
+            style={styles.previewAction}
           />
           <Button
+            title={scanning ? "Scanning..." : "Scan"}
+            icon="scan-outline"
             onPress={() => scanImage(uri)}
-            title="Scan Image"
-            disabled={scanning}
+            loading={scanning}
+            style={styles.previewAction}
           />
-        </ThemedView>
+        </View>
       </ThemedView>
     );
   };
@@ -168,29 +149,15 @@ const InvoiceScan = () => {
           ref={ref}
           mode={"picture"}
         />
-        <ThemedView style={styles.buttonContainer}>
+        <View style={styles.buttonContainer}>
           <Pressable onPress={takePicture}>
             {({ pressed }) => (
-              <ThemedView
-                style={[
-                  styles.shutterBtn,
-                  {
-                    opacity: pressed ? 0.5 : 1,
-                  },
-                ]}
-              >
-                <ThemedView
-                  style={[
-                    styles.shutterBtnInner,
-                    {
-                      backgroundColor: "white",
-                    },
-                  ]}
-                />
-              </ThemedView>
+              <View style={[styles.shutterBtn, { opacity: pressed ? 0.5 : 1 }]}>
+                <View style={styles.shutterBtnInner} />
+              </View>
             )}
           </Pressable>
-        </ThemedView>
+        </View>
       </ThemedView>
     );
   };
@@ -208,15 +175,36 @@ const styles = StyleSheet.create({
   },
   container2: {
     flex: 1,
-    backgroundColor: "#fff",
   },
-  message: {
-    textAlign: "center",
-    paddingBottom: 10,
+  permission: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
   },
+  permissionTitle: { ...Typography.title, textAlign: "center" },
+  message: { ...Typography.secondary, textAlign: "center" },
+  preview: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.three,
+    gap: Spacing.three,
+  },
+  previewImage: { width: "100%", flex: 1, borderRadius: Spacing.three },
+  previewActions: {
+    flexDirection: "row",
+    gap: Spacing.three,
+    width: "100%",
+    paddingBottom: Spacing.four,
+  },
+  previewAction: { flex: 1 },
   camera: {
     flex: 1,
   },
+  // Camera chrome stays white-on-feed regardless of theme — it sits over the live
+  // preview, not over the app's background.
   buttonContainer: {
     position: "absolute",
     bottom: 64,
@@ -240,12 +228,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 50,
-  },
-
-  text: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+    backgroundColor: "white",
   },
 });
 

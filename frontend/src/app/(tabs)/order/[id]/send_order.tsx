@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, Pressable, StyleSheet, TextInput } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery } from "@tanstack/react-query";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spacing, Typography } from "@/constants/theme";
 
 interface ISupplier {
   id: number;
@@ -99,54 +102,44 @@ const SendOrder = () => {
   }
 
   return (
-    <ThemedView
-      style={{
-        width: "100%",
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 20,
-        gap: 10,
-      }}
-    >
-      <ThemedText>Send this order to:</ThemedText>
-      <TextInput
-        style={styles.input}
-        placeholder="Recipient email"
-        placeholderTextColor="#888"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <Pressable
-        style={[styles.button, sending && { opacity: 0.5 }]}
-        onPress={handleSend}
-        disabled={sending}
+    <ThemedView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <ThemedText>{sending ? "Sending..." : "Send"}</ThemedText>
-      </Pressable>
+        <ThemedText themeColor="textSecondary" style={styles.intro}>
+          The current item list will be emailed to this address.
+        </ThemedText>
+        <Input
+          label="Send to"
+          placeholder="orders@supplier.com"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <Button
+          title={sending ? "Sending..." : "Send order"}
+          icon="paper-plane-outline"
+          onPress={handleSend}
+          loading={sending}
+          style={styles.submit}
+        />
+      </ScrollView>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  input: {
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    width: "100%",
-    fontSize: 16,
-    color: "#000",
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.four,
+    gap: Spacing.three,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
+  intro: Typography.secondary,
+  submit: { marginTop: Spacing.two },
 });
 
 export default SendOrder;

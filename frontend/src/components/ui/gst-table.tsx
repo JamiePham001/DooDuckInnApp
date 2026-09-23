@@ -1,5 +1,5 @@
 import React from "react";
-import { TextInput, TouchableOpacity, Platform } from "react-native";
+import { TextInput, Platform, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
@@ -11,10 +11,20 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { useEffect, useRef, useState } from "react";
 
 import { SwipeToDelete } from "@/components/swipe-to-delete";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import {
+  Hairline,
+  Radius,
+  Shadow,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 interface ITransactionRes {
   id: number;
@@ -41,6 +51,7 @@ function PulsingRow({
   highlighted: boolean;
   children: React.ReactNode;
 }) {
+  const colors = useTheme();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -55,21 +66,33 @@ function PulsingRow({
         false,
       );
     }
-  }, [highlighted]);
+  }, [highlighted, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      ["#ffffff", "#fff3b0"],
+      [colors.surface, colors.accentSoft],
     ),
   }));
 
   return (
-    <Animated.View style={[styles.tableRow, animatedStyle]}>
+    <Animated.View
+      style={[styles.tableRow, { borderTopColor: colors.border }, animatedStyle]}
+    >
       {children}
     </Animated.View>
   );
+}
+
+function useCellStyle(flex: number) {
+  const colors = useTheme();
+  return {
+    flex,
+    textAlign: "left" as const,
+    color: colors.text,
+    ...Typography.secondary,
+  };
 }
 
 function DebouncedNameInput({
@@ -79,6 +102,8 @@ function DebouncedNameInput({
   initialName: string;
   onSave: (name: string) => Promise<Response>;
 }) {
+  const colors = useTheme();
+  const style = useCellStyle(2);
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,7 +129,9 @@ function DebouncedNameInput({
     <TextInput
       value={name}
       onChangeText={handleChange}
-      style={{ flex: 2, textAlign: "left", fontSize: 12 }}
+      placeholder="Description"
+      placeholderTextColor={colors.textSecondary}
+      style={style}
     />
   );
 }
@@ -116,6 +143,8 @@ function DebouncedAmountInput({
   initialAmount: number;
   onSave: (amount: number) => Promise<Response>;
 }) {
+  const colors = useTheme();
+  const style = useCellStyle(1);
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialAmount.toString());
@@ -134,7 +163,7 @@ function DebouncedAmountInput({
         if (!res.ok) {
           throw new Error("Failed to update amount");
         }
-      } catch (error) {
+      } catch {
         setText(previousValue);
       }
     }, 600);
@@ -145,7 +174,8 @@ function DebouncedAmountInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
-      style={{ flex: 1, textAlign: "left", fontSize: 12 }}
+      placeholderTextColor={colors.textSecondary}
+      style={style}
     />
   );
 }
@@ -157,6 +187,8 @@ function DebouncedGstInput({
   initialGst: number;
   onSave: (gst: number) => Promise<Response>;
 }) {
+  const colors = useTheme();
+  const style = useCellStyle(1);
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
   const [text, setText] = useState(initialGst.toString());
@@ -176,7 +208,7 @@ function DebouncedGstInput({
         if (!res.ok) {
           throw new Error("Failed to update amount");
         }
-      } catch (error) {
+      } catch {
         setText(previousValue);
       }
     }, 600);
@@ -187,7 +219,8 @@ function DebouncedGstInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
-      style={{ flex: 1, textAlign: "left", fontSize: 12 }}
+      placeholderTextColor={colors.textSecondary}
+      style={style}
     />
   );
 }
@@ -200,9 +233,9 @@ const GstTable = ({
   transactionType,
   highlightId,
 }: TableProps) => {
+  const colors = useTheme();
   const [tableArray, setTableArray] = useState(array);
   const [creating, setCreating] = useState(false);
-  const [changes, setChanges] = useState(false);
   useEffect(() => {
     setTableArray(array);
   }, [array]);
@@ -259,18 +292,41 @@ const GstTable = ({
     }
   };
 
+  const total = tableArray.reduce((sum, t) => sum + (t.amount || 0), 0);
+
   return (
-    <ThemedView style={{ width: "100%", gap: 5 }}>
-      <ThemedView style={styles.tableContainer}>
-        <ThemedView style={styles.tableName}>
-          <ThemedText>{title}</ThemedText>
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.sectionTotal}>
+          ${total.toFixed(2)}
+        </ThemedText>
+      </View>
+
+      <ThemedView
+        style={[
+          styles.tableContainer,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <ThemedView
+          style={[
+            styles.tableRow,
+            styles.headerRow,
+            { backgroundColor: colors.surface, borderTopColor: colors.border },
+          ]}
+        >
+          <ThemedText themeColor="textSecondary" style={styles.headerCell2}>
+            Name
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
+            Amount
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
+            GST
+          </ThemedText>
         </ThemedView>
 
-        <ThemedView style={styles.tableRow}>
-          <ThemedText style={{ flex: 2, textAlign: "left" }}>Name</ThemedText>
-          <ThemedText style={{ flex: 1, textAlign: "left" }}>Amount</ThemedText>
-          <ThemedText style={{ flex: 1, textAlign: "left" }}>GST</ThemedText>
-        </ThemedView>
         {tableArray.map((transaction) => (
           <SwipeToDelete
             key={transaction.id}
@@ -290,7 +346,7 @@ const GstTable = ({
                     },
                   )
                 }
-              ></DebouncedNameInput>
+              />
               <DebouncedAmountInput
                 initialAmount={transaction.amount}
                 onSave={(amount) =>
@@ -302,7 +358,7 @@ const GstTable = ({
                     },
                   )
                 }
-              ></DebouncedAmountInput>
+              />
               <DebouncedGstInput
                 initialGst={transaction.gst}
                 onSave={(gst) =>
@@ -314,51 +370,67 @@ const GstTable = ({
                     },
                   )
                 }
-              ></DebouncedGstInput>
+              />
             </PulsingRow>
           </SwipeToDelete>
         ))}
-        <TouchableOpacity
-          style={styles.tableBtn}
+
+        <PressableScale
+          style={[
+            styles.addRow,
+            { backgroundColor: colors.accentSoft, borderTopColor: colors.border },
+          ]}
           onPress={addRow}
           disabled={creating}
         >
-          <ThemedText>+</ThemedText>
-        </TouchableOpacity>
+          <Ionicons name="add" size={18} color={colors.accent} />
+          <ThemedText style={[styles.addRowText, { color: colors.accent }]}>
+            Add row
+          </ThemedText>
+        </PressableScale>
       </ThemedView>
-    </ThemedView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  section: { width: "100%", gap: Spacing.two },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.one,
+  },
+  sectionTitle: Typography.heading,
+  sectionTotal: Typography.bodyStrong,
   tableContainer: {
     width: "100%",
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: Radius.lg,
+    borderWidth: Hairline,
     overflow: "hidden",
-  },
-  tableName: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "white",
-    height: 45,
+    ...Shadow.card,
   },
   tableRow: {
-    backgroundColor: "white",
     flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#f1f1f1",
-    height: 45,
-    paddingHorizontal: 10,
+    borderTopWidth: Hairline,
+    minHeight: 48,
+    paddingHorizontal: Spacing.three,
     alignItems: "center",
+    gap: Spacing.two,
   },
-  tableBtn: {
-    width: "100%",
+  // The first row has nothing above it to divide from.
+  headerRow: { borderTopWidth: 0 },
+  headerCell2: { ...Typography.caption, flex: 2, textAlign: "left" },
+  headerCell1: { ...Typography.caption, flex: 1, textAlign: "left" },
+  addRow: {
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    height: 30,
-    backgroundColor: "#1877F2",
+    gap: Spacing.one,
+    minHeight: 44,
+    borderTopWidth: Hairline,
   },
+  addRowText: Typography.caption,
 });
 
 export default GstTable;

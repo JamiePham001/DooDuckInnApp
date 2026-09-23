@@ -1,24 +1,37 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
-  Pressable,
-  Text,
+  View,
 } from "react-native";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "react-native";
-import { formatDateRange } from "@/utils/format-date-range";
 import { SwipeToDelete } from "@/components/swipe-to-delete";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import {
+  BottomTabInset,
+  Motion,
+  Radius,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { formatDateRange } from "@/utils/format-date-range";
 
 interface ITaxReport {
   id: number;
@@ -41,9 +54,93 @@ const fetchReports = async (jwtToken: string): Promise<ITaxReport[]> => {
   return res.json();
 };
 
-const Reports = () => {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+function ReportRow({
+  report,
+  index,
+  onDelete,
+}: {
+  report: ITaxReport;
+  index: number;
+  onDelete: () => void;
+}) {
+  const colors = useTheme();
+  const router = useRouter();
+  const sent = report.isSent;
+
+  const [pressed, setPressed] = useState(false);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        scale: withTiming(pressed ? 0.97 : 1, {
+          duration: Motion.fast,
+          easing: Motion.ease,
+        }),
+      },
+    ],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(Motion.base).delay(
+        Math.min(index, 6) * Motion.stagger,
+      )}
+      style={animatedStyle}
+    >
+      <SwipeToDelete
+        confirmMessage={`Delete the report for ${formatDateRange(report.startDate, report.endDate)}? This can't be undone.`}
+        onDelete={onDelete}
+        borderRadius={Radius.lg}
+      >
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/gst/[id]",
+              params: { id: report.id.toString() },
+            })
+          }
+          onPressIn={() => setPressed(true)}
+          onPressOut={() => setPressed(false)}
+        >
+          <Card flat style={styles.row}>
+            <View style={styles.rowText}>
+              <ThemedText style={styles.rowTitle} numberOfLines={1}>
+                {formatDateRange(report.startDate, report.endDate)}
+              </ThemedText>
+              <View
+                style={[
+                  styles.status,
+                  {
+                    backgroundColor: sent
+                      ? colors.medium + "1A"
+                      : colors.accentSoft,
+                  },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.statusText,
+                    { color: sent ? colors.medium : colors.accent },
+                  ]}
+                >
+                  {sent ? "Sent" : "Draft"}
+                </ThemedText>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Card>
+        </Pressable>
+      </SwipeToDelete>
+    </Animated.View>
+  );
+}
+
+export default function GstListPage() {
+  const colors = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [jwtToken, setJwtToken] = useState("");
@@ -91,170 +188,126 @@ const Reports = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <ThemedView
-        style={{
-          width: "100%",
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator />
-      </ThemedView>
-    );
-  }
+  const renderBody = () => {
+    if (error) {
+      return (
+        <View style={styles.message}>
+          <Ionicons
+            name="alert-circle-outline"
+            size={64}
+            color={colors.critical}
+          />
+          <ThemedText style={styles.messageTitle}>
+            Couldn&apos;t load reports
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.messageBody}>
+            Check your connection and try again.
+          </ThemedText>
+        </View>
+      );
+    }
 
-  if (error) {
-    return (
-      <ThemedView
-        style={{
-          width: "100%",
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Text>Error loading data</Text>
-      </ThemedView>
-    );
-  }
-
-  return (
-    <>
-      {data?.length == 0 ? (
-        <ThemedView
-          style={{
-            width: "100%",
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ThemedText>Press "New" to create your first report</ThemedText>
-        </ThemedView>
-      ) : (
-        <ThemedView
-          style={{
-            alignSelf: "flex-start",
-            width: "100%",
-            gap: 5,
-          }}
-        >
-          {data?.map((report) => (
-            <SwipeToDelete
-              key={report.id}
-              confirmMessage={`Delete the report for ${formatDateRange(report.startDate, report.endDate)}? This can't be undone.`}
-              onDelete={() => deleteReport(report.id)}
-              borderRadius={20}
-            >
-              <Pressable
-                style={styles.row}
-                onPress={() =>
-                  router.push({
-                    pathname: "/gst/[id]",
-                    params: { id: report.id.toString() },
-                  })
-                }
-              >
-                <ThemedText>
-                  {formatDateRange(report.startDate, report.endDate)}
-                </ThemedText>
-                <ThemedText style={{ color: colors.textSecondary }}>
-                  {report.isSent ? "Sent" : "Draft"}
-                </ThemedText>
-              </Pressable>
-            </SwipeToDelete>
+    if (isLoading || !jwtToken) {
+      return (
+        <View style={styles.list}>
+          {[0, 1, 2].map((i) => (
+            <Card key={i} flat style={[styles.row, styles.skeletonRow]} />
           ))}
-        </ThemedView>
-      )}
-    </>
-  );
-};
+        </View>
+      );
+    }
 
-export default function GstListPage() {
-  const router = useRouter();
+    if (!data || data.length === 0) {
+      return (
+        <View style={styles.message}>
+          <Ionicons
+            name="document-text-outline"
+            size={64}
+            color={colors.border}
+          />
+          <ThemedText style={styles.messageTitle}>No reports yet</ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.messageBody}>
+            Create your first quarterly GST report.
+          </ThemedText>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.list}>
+        {data.map((report, index) => (
+          <ReportRow
+            key={report.id}
+            report={report}
+            index={index}
+            onDelete={() => deleteReport(report.id)}
+          />
+        ))}
+      </View>
+    );
+  };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.headerRow}>
-          <Pressable
-            style={styles.button}
+    <ThemedView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: BottomTabInset + Spacing.four },
+        ]}
+      >
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>Reports</ThemedText>
+          <Button
+            title="New"
+            icon="add"
             onPress={() => router.push({ pathname: "/gst/create_report" })}
-            // disabled={creating}
-          >
-            <ThemedText>New</ThemedText>
-          </Pressable>
-        </ThemedView>
-        <Reports />
-      </ThemedView>
-    </ScrollView>
+          />
+        </View>
+
+        {renderBody()}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    gap: 12,
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    gap: Spacing.three,
   },
-  headerRow: {
+  header: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.three,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    color: "white",
-  },
+  title: Typography.title,
+  list: { gap: Spacing.two },
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    justifyContent: "space-between",
+    gap: Spacing.two,
   },
-  centeredView: {
+  rowText: { flexShrink: 1, gap: Spacing.one, alignItems: "flex-start" },
+  rowTitle: Typography.bodyStrong,
+  status: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Radius.pill,
+  },
+  statusText: Typography.caption,
+  skeletonRow: { height: 76 },
+  message: {
     flex: 1,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.six,
   },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  buttonOpen: {
-    backgroundColor: "#F194FF",
-  },
-  buttonClose: {
-    backgroundColor: "#2196F3",
-  },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: "center",
-  },
+  messageTitle: { ...Typography.title, textAlign: "center" },
+  messageBody: { ...Typography.secondary, textAlign: "center" },
 });

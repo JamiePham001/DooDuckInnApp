@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, Pressable, StyleSheet, TextInput } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spacing } from "@/constants/theme";
 
 interface ISupplier {
   id: number;
@@ -111,69 +113,53 @@ const EditVendor = () => {
   }
 
   return (
-    <ThemedView
-      style={{
-        width: "100%",
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 20,
-        gap: 10,
-      }}
-    >
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        placeholderTextColor="#888"
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#888"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Phone (optional)"
-        placeholderTextColor="#888"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
-      <Pressable
-        style={[styles.button, saving && { opacity: 0.5 }]}
-        onPress={handleSave}
-        disabled={saving}
+    <ThemedView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <ThemedText>{saving ? "Saving..." : "Save"}</ThemedText>
-      </Pressable>
+        <Input
+          label="Name"
+          placeholder="Bidfood"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+        />
+        <Input
+          label="Email"
+          placeholder="orders@supplier.com"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <Input
+          label="Phone (optional)"
+          placeholder="08 9000 0000"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+        />
+        <Button
+          title={saving ? "Saving..." : "Save changes"}
+          onPress={handleSave}
+          loading={saving}
+          style={styles.submit}
+        />
+      </ScrollView>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  input: {
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    width: "100%",
-    fontSize: 16,
-    color: "#000",
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.four,
+    gap: Spacing.three,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
+  submit: { marginTop: Spacing.two },
 });
 
 export default EditVendor;

@@ -1,17 +1,19 @@
 import React from "react";
 import { Stack } from "expo-router";
-import { useColorScheme } from "react-native";
-import { Colors } from "@/constants/theme";
+import { Typography } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function OrderLayout() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const colors = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShadowVisible: false,
         headerTitleAlign: "center",
         headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: { ...Typography.heading, color: colors.text },
+        headerTintColor: colors.accent,
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="index" options={{ title: "Suppliers" }} />

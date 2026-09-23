@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, Pressable, StyleSheet, TextInput } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { router, Stack } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Motion, Spacing } from "@/constants/theme";
+import { useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 interface ISupplier {
   id: number;
@@ -80,82 +83,54 @@ const CreateVendor = () => {
   }
 
   return (
-    <ThemedView style={{ width: "100%", flex: 1 }}>
+    <ThemedView style={styles.screen}>
       <Stack.Screen options={{ title: "New Vendor" }} />
-      <ThemedView
-        style={{
-          width: "100%",
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          paddingBottom: 80,
-          paddingHorizontal: 20,
-          gap: 10,
-        }}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          placeholderTextColor="#888"
+        <Input
+          label="Name"
+          placeholder="Bidfood"
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#888"
+        <Input
+          label="Email"
+          placeholder="orders@supplier.com"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Phone (optional)"
-          placeholderTextColor="#888"
+        <Input
+          label="Phone (optional)"
+          placeholder="08 9000 0000"
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
-        <ThemedView
-          style={{
-            flexDirection: "row",
-            width: "100%",
-            justifyContent: "center",
-          }}
-        >
-          <Pressable
-            style={[styles.button, creating && { opacity: 0.5 }]}
-            onPress={handleCreate}
-            disabled={creating}
-          >
-            <ThemedText>{creating ? "Creating..." : "Create"}</ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
+        <Button
+          title={creating ? "Creating..." : "Create vendor"}
+          onPress={handleCreate}
+          loading={creating}
+          style={styles.submit}
+        />
+      </ScrollView>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  input: {
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    width: "100%",
-    fontSize: 16,
-    color: "#000",
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.four,
+    gap: Spacing.three,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    color: "white",
-  },
+  submit: { marginTop: Spacing.two },
 });
 
 export default CreateVendor;

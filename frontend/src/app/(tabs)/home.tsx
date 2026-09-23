@@ -1,10 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery } from "@tanstack/react-query";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import {
+  BottomTabInset,
+  Hairline,
+  Motion,
+  Radius,
+  Shadow,
+  Spacing,
+  ThemeColor,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 // Matches DigestPriority in the backend (src/digests/digests.model.cs) — serializes as its
 // underlying int since no JsonStringEnumConverter is registered anywhere in this codebase.
@@ -22,11 +41,11 @@ const PRIORITY_LABEL: Record<DigestPriority, string> = {
   [DigestPriority.Low]: "Low",
 };
 
-const PRIORITY_COLOR: Record<DigestPriority, string> = {
-  [DigestPriority.Critical]: "#E53935",
-  [DigestPriority.High]: "#FB8C00",
-  [DigestPriority.Medium]: "#43A047",
-  [DigestPriority.Low]: "#9E9E9E",
+const PRIORITY_COLOR: Record<DigestPriority, ThemeColor> = {
+  [DigestPriority.Critical]: "critical",
+  [DigestPriority.High]: "high",
+  [DigestPriority.Medium]: "medium",
+  [DigestPriority.Low]: "low",
 };
 
 interface IDigestItem {
@@ -53,8 +72,135 @@ const fetchDigest = async (jwtToken: string): Promise<IDigestItem[]> => {
   return res.json();
 };
 
+function DigestCard({ item, index }: { item: IDigestItem; index: number }) {
+  const colors = useTheme();
+  const priorityColor = colors[PRIORITY_COLOR[item.priority]];
+
+  return (
+    <Animated.View
+      // Delay is capped so a 30-email digest doesn't take 1.4s to finish appearing.
+      entering={FadeInDown.duration(Motion.base).delay(
+        Math.min(index, 6) * Motion.stagger,
+      )}
+      style={[
+        styles.card,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
+    >
+      <View style={styles.cardHeader}>
+        <ThemedText style={styles.sender} numberOfLines={1}>
+          {item.senderName}
+        </ThemedText>
+        <View
+          style={[styles.pill, { backgroundColor: priorityColor + "1A" }]}
+        >
+          <ThemedText style={[styles.pillText, { color: priorityColor }]}>
+            {PRIORITY_LABEL[item.priority]}
+          </ThemedText>
+        </View>
+      </View>
+
+      <ThemedText style={styles.subject} numberOfLines={1}>
+        {item.subject}
+      </ThemedText>
+      <ThemedText
+        themeColor="textSecondary"
+        style={styles.summary}
+        numberOfLines={3}
+      >
+        {item.summary}
+      </ThemedText>
+    </Animated.View>
+  );
+}
+
+function LoadingSkeleton() {
+  const colors = useTheme();
+  const progress = useSharedValue(0.4);
+
+  useEffect(() => {
+    progress.value = withRepeat(
+      withTiming(1, { duration: 700, easing: Motion.ease }),
+      -1,
+      true,
+    );
+  }, [progress]);
+
+  const pulse = useAnimatedStyle(() => ({ opacity: progress.value }));
+
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            pulse,
+          ]}
+        >
+          {(["45%", "80%", "95%"] as const).map((width) => (
+            <View
+              key={width}
+              style={[
+                styles.skeletonBar,
+                { width, backgroundColor: colors.surfacePressed },
+              ]}
+            />
+          ))}
+        </Animated.View>
+      ))}
+    </>
+  );
+}
+
+function CenteredMessage({
+  icon,
+  iconColor,
+  title,
+  body,
+  action,
+}: {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  iconColor: string;
+  title: string;
+  body: string;
+  action?: { label: string; onPress: () => void };
+}) {
+  const colors = useTheme();
+
+  return (
+    <View style={styles.centered}>
+      <MaterialCommunityIcons name={icon} size={72} color={iconColor} />
+      <ThemedText type="subtitle" style={styles.centeredTitle}>
+        {title}
+      </ThemedText>
+      <ThemedText themeColor="textSecondary" style={styles.centeredBody}>
+        {body}
+      </ThemedText>
+      {action && (
+        <Pressable
+          onPress={action.onPress}
+          style={({ pressed }) => [
+            styles.button,
+            {
+              backgroundColor: pressed ? colors.accentPressed : colors.accent,
+            },
+          ]}
+        >
+          <ThemedText themeColor="textOnAccent" style={styles.buttonText}>
+            {action.label}
+          </ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 export default function HomeScreen() {
+  const colors = useTheme();
   const [jwtToken, setJwtToken] = useState("");
+  const [tokenFailed, setTokenFailed] = useState(false);
 
   useEffect(() => {
     const getToken = async () => {
@@ -64,80 +210,146 @@ export default function HomeScreen() {
         if (!token) throw new Error("No access token found");
         setJwtToken(token);
       } catch (err) {
+        // No Alert here: a native modal on cold start is jarring, and the error card
+        // below already communicates this state in place.
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        setTokenFailed(true);
       }
     };
     getToken();
   }, []);
 
-  const { data, isLoading, error } = useQuery<IDigestItem[]>({
+  const { data, isLoading, error, refetch } = useQuery<IDigestItem[]>({
     queryKey: ["digests", jwtToken],
     queryFn: () => fetchDigest(jwtToken),
     enabled: !!jwtToken,
     staleTime: 1000 * 60 * 5,
   });
 
-  if (isLoading) {
-    return (
-      <ThemedView style={styles.centered}>
-        <ActivityIndicator />
-      </ThemedView>
-    );
-  }
+  const needsAttention =
+    data?.filter((d) => d.priority <= DigestPriority.High).length ?? 0;
 
-  if (error) {
-    return (
-      <ThemedView style={styles.centered}>
-        <Text>Error loading digest</Text>
-      </ThemedView>
-    );
-  }
+  const renderBody = () => {
+    if (error || tokenFailed) {
+      return (
+        <CenteredMessage
+          icon="alert-circle-outline"
+          iconColor={colors.critical}
+          title="Couldn't load your emails"
+          body="Check your connection and try again."
+          action={{ label: "Try again", onPress: () => refetch() }}
+        />
+      );
+    }
 
-  if (!data || data.length === 0) {
-    return (
-      <ThemedView style={styles.centered}>
-        <ThemedText>No digest yet — check back tomorrow.</ThemedText>
-      </ThemedView>
-    );
-  }
+    if (isLoading || !jwtToken) return <LoadingSkeleton />;
+
+    if (!data || data.length === 0) {
+      return (
+        <CenteredMessage
+          icon="duck"
+          iconColor={colors.border}
+          title="All clear"
+          body="No emails need your attention today."
+        />
+      );
+    }
+
+    return data.map((item, index) => (
+      <DigestCard key={item.id} item={item} index={index} />
+    ));
+  };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <ThemedView style={styles.container}>
-        {data.map((item) => (
-          <ThemedView key={item.id} style={styles.row}>
-            <ThemedView style={styles.rowHeader}>
-              <ThemedText style={styles.senderName}>{item.senderName}</ThemedText>
-              <ThemedText style={{ color: PRIORITY_COLOR[item.priority] }}>
-                {PRIORITY_LABEL[item.priority]}
+    <ThemedView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: BottomTabInset + Spacing.four },
+        ]}
+      >
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="duck" size={28} color={colors.accent} />
+          <View>
+            <ThemedText type="subtitle" style={styles.headerTitle}>
+              Today
+            </ThemedText>
+            {!!data?.length && (
+              <ThemedText themeColor="textSecondary" style={styles.headerMeta}>
+                {data.length} {data.length === 1 ? "email" : "emails"}
+                {needsAttention > 0 && ` · ${needsAttention} need attention`}
               </ThemedText>
-            </ThemedView>
-            <ThemedText style={styles.subject}>{item.subject}</ThemedText>
-            <ThemedText style={styles.summary}>{item.summary}</ThemedText>
-          </ThemedView>
-        ))}
-      </ThemedView>
-    </ScrollView>
+            )}
+          </View>
+        </View>
+
+        {renderBody()}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  container: { paddingHorizontal: 20, paddingTop: 10, gap: 10 },
-  row: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 4,
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    gap: Spacing.two,
   },
-  rowHeader: {
+  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: Spacing.two,
+    paddingBottom: Spacing.two,
   },
-  senderName: { fontWeight: "600" },
-  subject: { fontSize: 13, opacity: 0.8 },
-  summary: { fontSize: 13 },
+  headerTitle: Typography.title,
+  headerMeta: Typography.secondary,
+
+  card: {
+    borderRadius: Radius.lg,
+    borderWidth: Hairline,
+    padding: Spacing.three,
+    gap: Spacing.one,
+    ...Shadow.card,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.two,
+  },
+  sender: { ...Typography.bodyStrong, flexShrink: 1 },
+  subject: Typography.body,
+  summary: Typography.secondary,
+
+  // A tinted pill rather than bare coloured text: it reads as a status at a glance, and
+  // putting the colour on its own background sidesteps small-text contrast problems.
+  pill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Radius.pill,
+  },
+  pillText: Typography.caption,
+
+  skeletonBar: { height: 12, borderRadius: Radius.sm },
+
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.six,
+  },
+  centeredTitle: { ...Typography.title, textAlign: "center" },
+  centeredBody: { ...Typography.secondary, textAlign: "center" },
+  button: {
+    marginTop: Spacing.two,
+    minHeight: 48,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.five,
+    borderRadius: Radius.pill,
+  },
+  buttonText: { ...Typography.body, textAlign: "center" },
 });

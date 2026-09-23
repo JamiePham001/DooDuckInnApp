@@ -3,6 +3,8 @@ import { Alert, Animated, PanResponder, StyleSheet } from "react-native";
 
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
+import { Spacing, Typography } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
   children: ReactNode;
@@ -20,6 +22,7 @@ export function SwipeToDelete({
   confirmMessage,
   borderRadius,
 }: Props) {
+  const colors = useTheme();
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
 
@@ -76,7 +79,12 @@ export function SwipeToDelete({
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={[styles.action, { borderRadius: borderRadius }]}>
+      <ThemedView
+        style={[
+          styles.action,
+          { borderRadius: borderRadius, backgroundColor: colors.critical },
+        ]}
+      >
         <ThemedText style={styles.actionText}>Delete</ThemedText>
       </ThemedView>
       <Animated.View
@@ -95,13 +103,13 @@ const styles = StyleSheet.create({
   },
   action: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "#e5484d",
     justifyContent: "center",
     alignItems: "flex-end",
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.four,
+    transform: [{ scale: 0.99 }],
   },
   actionText: {
-    color: "#ffffff",
-    fontWeight: "bold",
+    ...Typography.caption,
+    color: "#FFFFFF",
   },
 });

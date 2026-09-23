@@ -1,9 +1,17 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import {
+  Hairline,
+  Radius,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { router, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dropdown } from "react-native-element-dropdown";
-import { Alert, Platform, Pressable, StyleSheet } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import React from "react";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +47,7 @@ const months = [
 
 const CreateReport = () => {
   const queryClient = useQueryClient();
+  const colors = useTheme();
   const [jwtToken, setJwtToken] = useState("");
 
   const [year, setYear] = useState(null);
@@ -98,36 +107,44 @@ const CreateReport = () => {
       setCreating(false);
     }
   }
+  const dropdownStyle = (focused: boolean) => [
+    styles.dropdown,
+    {
+      backgroundColor: colors.surface,
+      borderColor: focused ? colors.accent : colors.border,
+    },
+  ];
+
+  const canCreate = !!year && !!startMonth;
+
   return (
-    <ThemedView
-      style={{
-        width: "100%",
-        flex: 1,
-      }}
-    >
-      <Stack.Screen
-        options={{
-          title: "Create Report",
-        }}
-      />
-      <ThemedView
-        style={{
-          width: "100%",
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          paddingBottom: 80,
-          paddingHorizontal: 20,
-          gap: 10,
-        }}
-      >
+    <ThemedView style={styles.screen}>
+      <Stack.Screen options={{ title: "New Report" }} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <ThemedText themeColor="textSecondary" style={styles.intro}>
+          Pick the year and quarter this report covers.
+        </ThemedText>
+
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          Year
+        </ThemedText>
         <Dropdown
-          style={[styles.dropdown, isFocus && { borderColor: "blue" }]}
+          style={dropdownStyle(isFocus)}
+          containerStyle={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderRadius: Radius.md,
+          }}
+          placeholderStyle={{ ...Typography.body, color: colors.textSecondary }}
+          selectedTextStyle={{ ...Typography.body, color: colors.text }}
+          itemTextStyle={{ ...Typography.body, color: colors.text }}
+          activeColor={colors.accentSoft}
           data={years}
           labelField="label"
           valueField="label"
           maxHeight={300}
-          placeholder={!isFocus ? "Year" : "..."}
+          value={year}
+          placeholder={!isFocus ? "Select a year" : "..."}
           onFocus={() => setIsFocus(true)}
           onBlur={() => setIsFocus(false)}
           onChange={(item) => {
@@ -135,13 +152,27 @@ const CreateReport = () => {
             setIsFocus(false);
           }}
         />
+
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          Quarter
+        </ThemedText>
         <Dropdown
-          style={[styles.dropdown, isFocus2 && { borderColor: "blue" }]}
+          style={dropdownStyle(isFocus2)}
+          containerStyle={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderRadius: Radius.md,
+          }}
+          placeholderStyle={{ ...Typography.body, color: colors.textSecondary }}
+          selectedTextStyle={{ ...Typography.body, color: colors.text }}
+          itemTextStyle={{ ...Typography.body, color: colors.text }}
+          activeColor={colors.accentSoft}
           data={months}
           labelField="label"
           valueField="start"
           maxHeight={300}
-          placeholder={!isFocus2 ? "Quarter" : "..."}
+          value={startMonth}
+          placeholder={!isFocus2 ? "Select a quarter" : "..."}
           onFocus={() => setIsFocus2(true)}
           onBlur={() => setIsFocus2(false)}
           onChange={(item) => {
@@ -150,68 +181,37 @@ const CreateReport = () => {
             setIsFocus2(false);
           }}
         />
-        <ThemedView
-          style={{
-            flexDirection: "row",
-            width: "100%",
-            justifyContent: "center",
-          }}
-        >
-          <Pressable style={styles.button} onPress={() => handleCreate()}>
-            <ThemedText>Create</ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
+
+        <Button
+          title={creating ? "Creating..." : "Create report"}
+          onPress={handleCreate}
+          loading={creating}
+          disabled={!canCreate}
+          style={styles.submit}
+        />
+      </ScrollView>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "white",
-    padding: 16,
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.four,
+    gap: Spacing.one,
   },
+  intro: { ...Typography.secondary, paddingBottom: Spacing.three },
+  label: { ...Typography.caption, paddingTop: Spacing.two },
   dropdown: {
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    minHeight: 52,
+    borderWidth: Hairline,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
     width: "100%",
   },
-  icon: {
-    marginRight: 5,
-  },
-  label: {
-    position: "absolute",
-    backgroundColor: "white",
-    left: 22,
-    top: 8,
-    zIndex: 999,
-    paddingHorizontal: 8,
-    fontSize: 14,
-  },
-  placeholderStyle: {
-    fontSize: 16,
-  },
-  selectedTextStyle: {
-    fontSize: 16,
-  },
-  iconStyle: {
-    width: 20,
-    height: 20,
-  },
-  inputSearchStyle: {
-    height: 40,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    color: "white",
-  },
+  submit: { marginTop: Spacing.four },
 });
 
 export default CreateReport;

@@ -3,9 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
+  View,
 } from "react-native";
 import {
   Stack,
@@ -14,12 +14,16 @@ import {
   useRouter,
 } from "expo-router";
 import { fetchAuthSession } from "aws-amplify/auth";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { consumePendingScannedTransactionId } from "@/utils/scan-signal";
 import GstTable from "@/components/ui/gst-table";
 import { ThemedView } from "@/components/themed-view";
 import { formatDateRange } from "@/utils/format-date-range";
 import { ThemedText } from "@/components/themed-text";
+import { Button } from "@/components/ui/button";
+import { Spacing, Typography } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 interface ITransactionRes {
   id: number;
@@ -45,6 +49,7 @@ export default function GstReportEditorPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const taxId = Number(id);
   const router = useRouter();
+  const colors = useTheme();
 
   const [soldArr, setSoldArr] = useState<ITransactionRes[]>([]);
   const [purchaseArr, setPurchaseArr] = useState<ITransactionRes[]>([]);
@@ -183,103 +188,105 @@ export default function GstReportEditorPage() {
     }
   };
 
+  const screenTitle = taxData
+    ? formatDateRange(taxData.startDate, taxData.endDate)
+    : "";
+
   if (transactionsLoading || taxLoading)
     return (
-      <ThemedView style={styles.reportContainer}>
+      <ThemedView style={styles.centered}>
+        <Stack.Screen options={{ title: screenTitle }} />
         <ActivityIndicator />
       </ThemedView>
     );
 
   if (transactionsError || taxError)
     return (
-      <ThemedView style={styles.reportContainer}>
-        <ThemedText>Error loading data</ThemedText>
+      <ThemedView style={styles.centered}>
+        <Stack.Screen options={{ title: screenTitle }} />
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={colors.critical}
+        />
+        <ThemedText style={styles.messageTitle}>
+          Couldn&apos;t load this report
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.messageBody}>
+          Check your connection and try again.
+        </ThemedText>
       </ThemedView>
     );
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
-      <Stack.Screen
-        options={{
-          title: taxData
-            ? formatDateRange(taxData.startDate, taxData.endDate)
-            : "",
-        }}
-      />
-      <ThemedView
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          paddingHorizontal: 20,
-          paddingBottom: 20,
-        }}
-      >
-        <Pressable
-          style={styles.button}
-          onPress={() =>
-            router.push({
-              pathname: "/gst/[id]/camera",
-              params: { id: id },
-            })
-          }
-          disabled={scanning}
-        >
-          <ThemedText>
-            {scanning ? <ActivityIndicator color={"white"} /> : "Scan"}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={styles.button}
-          onPress={sendReport}
-          disabled={sending}
-        >
-          <ThemedText>
-            {sending ? <ActivityIndicator color={"white"} /> : "Send"}
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
+    <ThemedView style={styles.screen}>
+      <Stack.Screen options={{ title: screenTitle }} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.actions}>
+          <Button
+            title="Scan"
+            icon="camera-outline"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: "/gst/[id]/camera",
+                params: { id: id },
+              })
+            }
+            loading={scanning}
+            style={styles.action}
+          />
+          <Button
+            title="Send"
+            icon="paper-plane-outline"
+            onPress={sendReport}
+            loading={sending}
+            style={styles.action}
+          />
+        </View>
 
-      <ThemedView
-        style={{
-          paddingHorizontal: 20,
-          width: "100%",
-        }}
-      >
-        <ThemedView style={styles.reportContainer}>
-          <GstTable
-            title="Sold"
-            array={soldArr}
-            jwtToken={jwtToken}
-            taxId={taxId}
-            transactionType={0}
-            highlightId={highlightId}
-          ></GstTable>
-          <GstTable
-            title="Purchases"
-            array={purchaseArr}
-            jwtToken={jwtToken}
-            taxId={taxId}
-            transactionType={1}
-            highlightId={highlightId}
-          ></GstTable>
-        </ThemedView>
-      </ThemedView>
-    </ScrollView>
+        <GstTable
+          title="Sold"
+          array={soldArr}
+          jwtToken={jwtToken}
+          taxId={taxId}
+          transactionType={0}
+          highlightId={highlightId}
+        />
+        <GstTable
+          title="Purchases"
+          array={purchaseArr}
+          jwtToken={jwtToken}
+          taxId={taxId}
+          transactionType={1}
+          highlightId={highlightId}
+        />
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  reportContainer: {
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: Spacing.three,
+  },
+  action: { flex: 1 },
+  centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 20,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
   },
-  button: {
-    backgroundColor: "#1877F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    color: "white",
-  },
+  messageTitle: { ...Typography.title, textAlign: "center" },
+  messageBody: { ...Typography.secondary, textAlign: "center" },
 });

@@ -1,9 +1,10 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
-import { useColorScheme } from "react-native";
+import React from "react";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { Colors } from "@/constants/theme";
+import { useSchemeName } from "@/hooks/use-theme";
 
 import "react-native-get-random-values";
 import "react-native-url-polyfill/auto";
@@ -59,39 +60,68 @@ cognitoUserPoolsTokenProvider.setKeyValueStorage(new InMemoryStorage());
 // MUST be flipped back to false before committing/shipping.
 const DEV_SKIP_AUTH = false;
 
-function AuthGate({ children }: { children: React.ReactNode }) {
-  const { authStatus } = useAuthenticator((context) => [context.authStatus]);
+// React Navigation ships its own palette, which has no relationship to the app's Colors —
+// so navigation chrome (header background, back-button tint, the fill behind a screen
+// transition) would disagree with everything the screens draw. Map ours onto its shape.
+function navigationTheme(scheme: "light" | "dark") {
+  const c = Colors[scheme];
+  const base = scheme === "dark" ? DarkTheme : DefaultTheme;
 
-  useEffect(() => {
-    // Amplify starts in "configuring" while it checks for a stored session, then
-    // settles to authenticated/unauthenticated — only hide the splash once we know
-    // which screen to show, so cold start never flashes the login page.
-    if (authStatus !== "configuring" || DEV_SKIP_AUTH) {
-      SplashScreen.hideAsync();
-    }
-  }, [authStatus]);
-
-  if (DEV_SKIP_AUTH) return children;
-  if (authStatus === "configuring") return null;
-  return authStatus === "authenticated" ? children : <LoginScreen />;
+  return {
+    ...base,
+    dark: scheme === "dark",
+    colors: {
+      ...base.colors,
+      primary: c.accent,
+      background: c.background,
+      card: c.surface,
+      text: c.text,
+      border: c.border,
+      notification: c.critical,
+    },
+  };
 }
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+function Root() {
+  const { authStatus } = useAuthenticator((context) => [context.authStatus]);
+  const scheme = useSchemeName();
+
+  // Amplify starts in "configuring" while it checks for a stored session, then settles to
+  // authenticated/unauthenticated. Nothing below renders until we know which one.
+  const ready = authStatus !== "configuring" || DEV_SKIP_AUTH;
+  const authed = authStatus === "authenticated" || DEV_SKIP_AUTH;
+
+  return (
+    <ThemeProvider value={navigationTheme(scheme)}>
+      {ready &&
+        (authed ? (
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: "slide_from_right",
+              contentStyle: { backgroundColor: Colors[scheme].background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        ) : (
+          <LoginScreen />
+        ))}
+
+      {/* Sibling of the gated content, not a child: the overlay is the single owner of
+          hiding the native splash, and whatever is underneath is revealed only by its
+          fade — so the login screen can never flash on a cold start. */}
+      <AnimatedSplashOverlay ready={ready} />
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <Authenticator.Provider>
-          <AuthGate>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <AnimatedSplashOverlay />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-            </ThemeProvider>
-          </AuthGate>
+          <Root />
         </Authenticator.Provider>
       </QueryClientProvider>
     </GestureHandlerRootView>

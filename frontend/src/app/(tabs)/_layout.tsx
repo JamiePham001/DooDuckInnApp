@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { Tabs } from "expo-router";
 
-import { useColorScheme } from "react-native";
-import { Colors } from "@/constants/theme";
+import { BottomTabInset, Spacing, Typography } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 import { AnimatedTabItem } from "@/components/animated-tab-icon";
 import { SettingsAccordion } from "@/components/settings-accordion";
@@ -12,30 +12,31 @@ export default function TabLayout() {
   const iconSize = 20;
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const colors = useTheme();
 
   return (
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colors.tabText,
-          tabBarInactiveTintColor: colors.inactive,
+          tabBarActiveTintColor: colors.tabActive,
+          tabBarInactiveTintColor: colors.tabInactive,
           tabBarShowLabel: false,
+          sceneStyle: { backgroundColor: colors.background },
           headerShadowVisible: false,
           headerTitleAlign: "center",
           headerStyle: { backgroundColor: colors.background },
           headerTitleStyle: {
-            fontWeight: "100",
-            color: "#5f5f5f",
+            ...Typography.heading,
+            color: colors.text,
           },
           tabBarStyle: {
             elevation: 0,
             shadowOpacity: 0,
             borderTopWidth: 0,
-            backgroundColor: "#1877F2",
-            paddingTop: 10,
-            paddingHorizontal: 20,
+            backgroundColor: colors.tabBar,
+            height: BottomTabInset,
+            paddingTop: Spacing.two,
+            paddingHorizontal: Spacing.four,
           },
         }}
       >
@@ -113,7 +114,7 @@ export default function TabLayout() {
                 size={iconSize}
                 name={settingsOpen ? "settings" : "settings-outline"}
                 label="Settings"
-                color={settingsOpen ? colors.tabText : colors.inactive}
+                color={settingsOpen ? colors.tabActive : colors.tabInactive}
                 focused={settingsOpen}
               />
             ),
