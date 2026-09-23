@@ -4,6 +4,7 @@ import React from "react";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Colors } from "@/constants/theme";
+import { AuthTokenProvider } from "@/hooks/use-auth-token";
 import { I18nProvider, useI18n } from "@/hooks/use-i18n";
 import { useSchemeName } from "@/hooks/use-theme";
 
@@ -92,22 +93,25 @@ function Root() {
     <ThemeProvider value={navigationTheme(scheme)}>
       {ready &&
         (authed ? (
-          // Keyed on locale: React Navigation's native header/tab-bar options don't
-          // reliably propagate a language change through every nested Tab/Stack
-          // navigator on their own — remounting the whole tree on switch is what
-          // actually refreshes every header and tab label. TanStack Query's cache is
-          // keyed independently of this component tree, so screens come back showing
-          // their existing cached data immediately, not an empty loading state.
-          <Stack
-            key={locale}
-            screenOptions={{
-              headerShown: false,
-              animation: "slide_from_right",
-              contentStyle: { backgroundColor: Colors[scheme].background },
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <AuthTokenProvider>
+            {/* // Keyed on locale: React Navigation's native header/tab-bar options
+            don't // reliably propagate a language change through every nested
+            Tab/Stack // navigator on their own — remounting the whole tree on
+            switch is what // actually refreshes every header and tab label.
+            TanStack Query's cache is // keyed independently of this component
+            tree, so screens come back showing // their existing cached data
+            immediately, not an empty loading state. */}
+            <Stack
+              key={locale}
+              screenOptions={{
+                headerShown: false,
+                animation: "slide_from_right",
+                contentStyle: { backgroundColor: Colors[scheme].background },
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </AuthTokenProvider>
         ) : (
           <LoginScreen />
         ))}

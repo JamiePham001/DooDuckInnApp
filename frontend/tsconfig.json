@@ -3,6 +3,10 @@
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
+    // Listed explicitly (rather than left to auto-inclusion) so adding "jest" doesn't
+    // silently drop the ambient JSX/Node globals every other file already relies on —
+    // TS only auto-includes every @types/* package when this array is absent entirely.
+    "types": ["jest", "react", "node"],
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"]

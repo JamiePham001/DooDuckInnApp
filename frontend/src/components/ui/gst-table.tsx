@@ -26,6 +26,7 @@ import {
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { API_HOST } from "@/constants/api";
 
 interface ITransactionRes {
   id: number;
@@ -243,7 +244,6 @@ const GstTable = ({
     setTableArray(array);
   }, [array]);
 
-  const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
   const addRow = async () => {
     try {
       setCreating(true);

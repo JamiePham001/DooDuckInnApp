@@ -1,13 +1,5 @@
-import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
-import { fetchAuthSession } from "aws-amplify/auth";
+import React, { useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -32,6 +24,8 @@ import {
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { useAuthToken } from "@/hooks/use-auth-token";
+import { API_HOST } from "@/constants/api";
 
 interface ISupplier {
   id: number;
@@ -41,7 +35,6 @@ interface ISupplier {
   phone: string;
 }
 
-const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
 const fetchSuppliers = async (jwtToken: string): Promise<ISupplier[]> => {
   const res = await fetch(`http://${API_HOST}:5010/api/users/me/suppliers`, {
@@ -147,25 +140,10 @@ function SupplierRow({
 }
 
 export default function OrderPage() {
-  const [jwtToken, setJwtToken] = useState("");
+  const { jwtToken } = useAuthToken();
   const router = useRouter();
   const colors = useTheme();
   const { t } = useI18n();
-
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens?.idToken?.toString();
-        if (!token) throw new Error("No access token found");
-        setJwtToken(token);
-      } catch (err) {
-        console.error("Error fetching JWT:", err);
-        Alert.alert(t("common.error"), t("common.authError"));
-      }
-    };
-    getToken();
-  }, []);
 
   const { data, isLoading, error } = useQuery<ISupplier[]>({
     // Was "taxes" — the exact same key (and same jwtToken) as the GST report

@@ -1,14 +1,6 @@
-import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import { fetchAuthSession } from "aws-amplify/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
@@ -31,6 +23,8 @@ import {
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { useAuthToken } from "@/hooks/use-auth-token";
+import { API_HOST } from "@/constants/api";
 import { formatDateRange } from "@/utils/format-date-range";
 
 interface ITaxReport {
@@ -44,7 +38,6 @@ interface ITaxReport {
 // ponytail: "localhost" means the device itself on Android, not the host machine —
 // the Android emulator maps the host's localhost to 10.0.2.2 instead. Swap for a real
 // LAN IP (or an env-based config) once testing on a physical device.
-const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
 const fetchReports = async (jwtToken: string): Promise<ITaxReport[]> => {
   const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
@@ -147,22 +140,7 @@ export default function GstListPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useI18n();
-  const [jwtToken, setJwtToken] = useState("");
-
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens?.idToken?.toString();
-        if (!token) throw new Error("No access token found");
-        setJwtToken(token);
-      } catch (err) {
-        console.error("Error fetching JWT:", err);
-        Alert.alert(t("common.error"), t("common.authError"));
-      }
-    };
-    getToken();
-  }, []);
+  const { jwtToken } = useAuthToken();
 
   // queryFn is called with a TanStack-supplied context object, not custom args —
   // jwtToken is captured via closure instead, and included in queryKey so a token

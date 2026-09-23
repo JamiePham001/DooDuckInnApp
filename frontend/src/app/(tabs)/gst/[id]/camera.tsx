@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { StyleSheet, Pressable, View, Platform, Alert } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 
@@ -7,40 +7,22 @@ import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Spacing, Typography } from "@/constants/theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { useAuthToken } from "@/hooks/use-auth-token";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
-import { fetchAuthSession } from "aws-amplify/auth";
 import { setPendingScannedTransactionId } from "@/utils/scan-signal";
+import { API_HOST } from "@/constants/api";
 
 const InvoiceScan = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [uri, setUri] = useState<string | null>(null);
-  const [jwtToken, setJwtToken] = useState("");
+  const { jwtToken } = useAuthToken();
   const [scanning, setScanning] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useI18n();
 
-  const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        const session = await fetchAuthSession();
-        // The backend validates the JWT's `aud` claim against the Cognito app client —
-        // Cognito's access token has no `aud` at all (only `client_id`), so it always
-        // fails that check. The ID token carries both `aud` and `sub`.
-        const token = session.tokens?.idToken?.toString();
-        if (!token) throw new Error("No access token found");
-        setJwtToken(token);
-      } catch (err) {
-        console.error("Error fetching JWT:", err);
-        Alert.alert(t("common.error"), t("common.authError"));
-      }
-    };
-    getToken();
-  }, []);
 
   if (!permission) {
     // Camera permissions are still loading.

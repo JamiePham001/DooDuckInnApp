@@ -9,13 +9,14 @@ import {
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { useAuthToken } from "@/hooks/use-auth-token";
 import { router, Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Dropdown } from "react-native-element-dropdown";
 import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import React from "react";
-import { fetchAuthSession } from "aws-amplify/auth";
 import { useQueryClient } from "@tanstack/react-query";
+import { API_HOST } from "@/constants/api";
 
 interface ITaxReport {
   id: number;
@@ -43,7 +44,7 @@ const CreateReport = () => {
   const queryClient = useQueryClient();
   const colors = useTheme();
   const { t } = useI18n();
-  const [jwtToken, setJwtToken] = useState("");
+  const { jwtToken } = useAuthToken();
 
   const months = [
     { label: t("gst.quarters.q1"), start: "01", end: "03" },
@@ -60,22 +61,6 @@ const CreateReport = () => {
   const [isFocus2, setIsFocus2] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens?.idToken?.toString();
-        if (!token) throw new Error("No access token found");
-        setJwtToken(token);
-      } catch (err) {
-        console.error("Error fetching JWT:", err);
-        Alert.alert(t("common.error"), t("common.authError"));
-      }
-    };
-    getToken();
-  }, []);
 
   async function handleCreate() {
     if (creating) return;
