@@ -1,0 +1,133 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "new": "New",
+    "delete": "Delete",
+    "confirmDeleteTitle": "Confirm delete",
+    "confirmDeleteBody": "Are you sure you want to delete this? This can't be undone.",
+    "deleteNamedConfirm": "Delete \"%{name}\"? This can't be undone.",
+    "nameColumn": "Name",
+    "error": "Error",
+    "authError": "Could not retrieve authentication token.",
+    "checkConnection": "Check your connection and try again.",
+    "tryAgain": "Try again",
+    "missingDetails": "Missing details",
+    "invalidEmail": "Invalid email",
+    "enterValidEmail": "Enter a valid email address.",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "sending": "Sending..."
+  },
+  "tabs": {
+    "home": "Home",
+    "gst": "GST",
+    "gstHeader": "GST Reports",
+    "order": "Order",
+    "settings": "Settings"
+  },
+  "settings": {
+    "language": "Language",
+    "logOut": "Log Out",
+    "chooseLanguage": "Choose a language"
+  },
+  "login": {
+    "title": "Doo Duck Inn",
+    "subtitle": "Enter your PIN to continue",
+    "signInFailed": "Sign in failed."
+  },
+  "home": {
+    "title": "Today",
+    "emailCount": {
+      "one": "%{count} email",
+      "other": "%{count} emails"
+    },
+    "needAttention": "· %{count} need attention",
+    "allClear": "All clear",
+    "noAttention": "No emails need your attention today.",
+    "loadError": "Couldn't load your emails",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "gst": {
+    "reportsTitle": "Reports",
+    "loadError": "Couldn't load reports",
+    "emptyTitle": "No reports yet",
+    "emptyBody": "Create your first quarterly GST report.",
+    "deleteReportConfirm": "Delete the report for %{range}? This can't be undone.",
+    "statusSent": "Sent",
+    "statusDraft": "Draft",
+    "newReportTitle": "New Report",
+    "reportIntro": "Pick the year and quarter this report covers.",
+    "yearLabel": "Year",
+    "quarterLabel": "Quarter",
+    "yearPlaceholder": "Select a year",
+    "quarterPlaceholder": "Select a quarter",
+    "quarters": {
+      "q1": "January - March",
+      "q2": "April - June",
+      "q3": "July - September",
+      "q4": "October - December"
+    },
+    "createReport": "Create report",
+    "createReportFailed": "Could not create a new GST report.",
+    "loadDetailError": "Couldn't load this report",
+    "scanButton": "Scan",
+    "sendButton": "Send",
+    "soldTable": "Sold",
+    "purchasesTable": "Purchases",
+    "scanTitle": "Scan",
+    "cameraPermissionTitle": "Camera access needed",
+    "cameraPermissionBody": "Allow camera access so you can scan receipts and invoices.",
+    "grantPermission": "Grant permission",
+    "checkPhotoTitle": "Check the photo",
+    "scanHint": "Make sure the invoice is in frame and well lit before scanning.",
+    "retake": "Retake",
+    "scanning": "Scanning...",
+    "scanFailedTitle": "Scan failed",
+    "scanFailedBody": "Could not process the receipt. Please try again.",
+    "unnamedTransaction": "this transaction",
+    "table": {
+      "amount": "Amount",
+      "gst": "GST",
+      "addRow": "Add row",
+      "namePlaceholder": "Description"
+    }
+  },
+  "order": {
+    "suppliersTitle": "Suppliers",
+    "loadError": "Couldn't load suppliers",
+    "emptyTitle": "No suppliers yet",
+    "emptyBody": "Add a supplier to start building orders.",
+    "deleteSupplierConfirm": "Delete the supplier %{name}? This can't be undone.",
+    "newSupplierTitle": "New Supplier",
+    "editSupplierTitle": "Edit Supplier",
+    "sendOrderTitle": "Send Order",
+    "nameLabel": "Name",
+    "namePlaceholder": "Bidfood",
+    "emailLabel": "Email",
+    "emailPlaceholder": "orders@supplier.com",
+    "phoneLabel": "Phone (optional)",
+    "phonePlaceholder": "08 9000 0000",
+    "nameAndEmailRequired": "Name and email are required.",
+    "nameRequired": "Name is required.",
+    "createVendor": "Create vendor",
+    "createVendorFailed": "Could not create a new vendor.",
+    "saveChanges": "Save changes",
+    "saveVendorFailed": "Could not save vendor details.",
+    "loadDetailError": "Couldn't load this vendor",
+    "itemsTitle": "Items",
+    "itemNamePlaceholder": "Item name",
+    "qtyColumn": "Qty",
+    "addItem": "Add item",
+    "unnamedItem": "this item",
+    "editButton": "Edit",
+    "sendOrderButton": "Send order",
+    "sendOrderIntro": "The current item list will be emailed to this address.",
+    "sendToLabel": "Send to",
+    "sendOrderFailed": "Could not send the order email."
+  }
+}

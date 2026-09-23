@@ -1,0 +1,132 @@
+{
+  "common": {
+    "cancel": "Hủy",
+    "new": "Mới",
+    "delete": "Xóa",
+    "confirmDeleteTitle": "Xác nhận xóa",
+    "confirmDeleteBody": "Bạn có chắc muốn xóa mục này không? Không thể hoàn tác.",
+    "deleteNamedConfirm": "Xóa \"%{name}\"? Không thể hoàn tác.",
+    "nameColumn": "Tên",
+    "error": "Lỗi",
+    "authError": "Không thể lấy được mã xác thực.",
+    "checkConnection": "Kiểm tra kết nối mạng và thử lại.",
+    "tryAgain": "Thử lại",
+    "missingDetails": "Thiếu thông tin",
+    "invalidEmail": "Email không hợp lệ",
+    "enterValidEmail": "Nhập một địa chỉ email hợp lệ.",
+    "creating": "Đang tạo...",
+    "saving": "Đang lưu...",
+    "sending": "Đang gửi..."
+  },
+  "tabs": {
+    "home": "Trang chủ",
+    "gst": "GST",
+    "gstHeader": "Báo cáo GST",
+    "order": "Đặt hàng",
+    "settings": "Cài đặt"
+  },
+  "settings": {
+    "language": "Ngôn ngữ",
+    "logOut": "Đăng xuất",
+    "chooseLanguage": "Chọn ngôn ngữ"
+  },
+  "login": {
+    "title": "Doo Duck Inn",
+    "subtitle": "Nhập mã PIN để tiếp tục",
+    "signInFailed": "Đăng nhập không thành công."
+  },
+  "home": {
+    "title": "Hôm nay",
+    "emailCount": {
+      "other": "%{count} email"
+    },
+    "needAttention": "· %{count} cần chú ý",
+    "allClear": "Không có gì cần xử lý",
+    "noAttention": "Không có email nào cần bạn chú ý hôm nay.",
+    "loadError": "Không thể tải email của bạn",
+    "priority": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "medium": "Trung bình",
+      "low": "Thấp"
+    }
+  },
+  "gst": {
+    "reportsTitle": "Báo cáo",
+    "loadError": "Không thể tải báo cáo",
+    "emptyTitle": "Chưa có báo cáo nào",
+    "emptyBody": "Tạo báo cáo GST hàng quý đầu tiên của bạn.",
+    "deleteReportConfirm": "Xóa báo cáo cho %{range}? Không thể hoàn tác.",
+    "statusSent": "Đã gửi",
+    "statusDraft": "Bản nháp",
+    "newReportTitle": "Báo cáo mới",
+    "reportIntro": "Chọn năm và quý mà báo cáo này áp dụng.",
+    "yearLabel": "Năm",
+    "quarterLabel": "Quý",
+    "yearPlaceholder": "Chọn năm",
+    "quarterPlaceholder": "Chọn quý",
+    "quarters": {
+      "q1": "Tháng 1 - Tháng 3",
+      "q2": "Tháng 4 - Tháng 6",
+      "q3": "Tháng 7 - Tháng 9",
+      "q4": "Tháng 10 - Tháng 12"
+    },
+    "createReport": "Tạo báo cáo",
+    "createReportFailed": "Không thể tạo báo cáo GST mới.",
+    "loadDetailError": "Không thể tải báo cáo này",
+    "scanButton": "Quét",
+    "sendButton": "Gửi",
+    "soldTable": "Doanh thu",
+    "purchasesTable": "Chi phí",
+    "scanTitle": "Quét",
+    "cameraPermissionTitle": "Cần quyền truy cập máy ảnh",
+    "cameraPermissionBody": "Cho phép truy cập máy ảnh để quét hóa đơn và biên lai.",
+    "grantPermission": "Cấp quyền",
+    "checkPhotoTitle": "Kiểm tra ảnh",
+    "scanHint": "Đảm bảo hóa đơn nằm gọn trong khung hình và đủ sáng trước khi quét.",
+    "retake": "Chụp lại",
+    "scanning": "Đang quét...",
+    "scanFailedTitle": "Quét thất bại",
+    "scanFailedBody": "Không thể xử lý biên lai. Vui lòng thử lại.",
+    "unnamedTransaction": "giao dịch này",
+    "table": {
+      "amount": "Số tiền",
+      "gst": "GST",
+      "addRow": "Thêm dòng",
+      "namePlaceholder": "Mô tả"
+    }
+  },
+  "order": {
+    "suppliersTitle": "Nhà cung cấp",
+    "loadError": "Không thể tải nhà cung cấp",
+    "emptyTitle": "Chưa có nhà cung cấp nào",
+    "emptyBody": "Thêm một nhà cung cấp để bắt đầu tạo đơn hàng.",
+    "deleteSupplierConfirm": "Xóa nhà cung cấp %{name}? Không thể hoàn tác.",
+    "newSupplierTitle": "Nhà cung cấp mới",
+    "editSupplierTitle": "Sửa nhà cung cấp",
+    "sendOrderTitle": "Gửi đơn hàng",
+    "nameLabel": "Tên",
+    "namePlaceholder": "Bidfood",
+    "emailLabel": "Email",
+    "emailPlaceholder": "orders@supplier.com",
+    "phoneLabel": "Số điện thoại (không bắt buộc)",
+    "phonePlaceholder": "08 9000 0000",
+    "nameAndEmailRequired": "Cần nhập tên và email.",
+    "nameRequired": "Cần nhập tên.",
+    "createVendor": "Tạo nhà cung cấp",
+    "createVendorFailed": "Không thể tạo nhà cung cấp mới.",
+    "saveChanges": "Lưu thay đổi",
+    "saveVendorFailed": "Không thể lưu thông tin nhà cung cấp.",
+    "loadDetailError": "Không thể tải nhà cung cấp này",
+    "itemsTitle": "Mặt hàng",
+    "itemNamePlaceholder": "Tên mặt hàng",
+    "qtyColumn": "SL",
+    "addItem": "Thêm mặt hàng",
+    "unnamedItem": "mặt hàng này",
+    "editButton": "Sửa",
+    "sendOrderButton": "Gửi đơn hàng",
+    "sendOrderIntro": "Danh sách mặt hàng hiện tại sẽ được gửi qua email đến địa chỉ này.",
+    "sendToLabel": "Gửi đến",
+    "sendOrderFailed": "Không thể gửi email đơn hàng."
+  }
+}

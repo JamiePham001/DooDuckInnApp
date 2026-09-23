@@ -24,6 +24,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 // Matches DigestPriority in the backend (src/digests/digests.model.cs) — serializes as its
 // underlying int since no JsonStringEnumConverter is registered anywhere in this codebase.
@@ -34,11 +35,11 @@ enum DigestPriority {
   Low = 3,
 }
 
-const PRIORITY_LABEL: Record<DigestPriority, string> = {
-  [DigestPriority.Critical]: "Critical",
-  [DigestPriority.High]: "High",
-  [DigestPriority.Medium]: "Medium",
-  [DigestPriority.Low]: "Low",
+const PRIORITY_KEY: Record<DigestPriority, string> = {
+  [DigestPriority.Critical]: "home.priority.critical",
+  [DigestPriority.High]: "home.priority.high",
+  [DigestPriority.Medium]: "home.priority.medium",
+  [DigestPriority.Low]: "home.priority.low",
 };
 
 const PRIORITY_COLOR: Record<DigestPriority, ThemeColor> = {
@@ -74,6 +75,7 @@ const fetchDigest = async (jwtToken: string): Promise<IDigestItem[]> => {
 
 function DigestCard({ item, index }: { item: IDigestItem; index: number }) {
   const colors = useTheme();
+  const { t } = useI18n();
   const priorityColor = colors[PRIORITY_COLOR[item.priority]];
 
   return (
@@ -95,7 +97,7 @@ function DigestCard({ item, index }: { item: IDigestItem; index: number }) {
           style={[styles.pill, { backgroundColor: priorityColor + "1A" }]}
         >
           <ThemedText style={[styles.pillText, { color: priorityColor }]}>
-            {PRIORITY_LABEL[item.priority]}
+            {t(PRIORITY_KEY[item.priority])}
           </ThemedText>
         </View>
       </View>
@@ -199,6 +201,7 @@ function CenteredMessage({
 
 export default function HomeScreen() {
   const colors = useTheme();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
   const [tokenFailed, setTokenFailed] = useState(false);
 
@@ -235,9 +238,9 @@ export default function HomeScreen() {
         <CenteredMessage
           icon="alert-circle-outline"
           iconColor={colors.critical}
-          title="Couldn't load your emails"
-          body="Check your connection and try again."
-          action={{ label: "Try again", onPress: () => refetch() }}
+          title={t("home.loadError")}
+          body={t("common.checkConnection")}
+          action={{ label: t("common.tryAgain"), onPress: () => refetch() }}
         />
       );
     }
@@ -249,8 +252,8 @@ export default function HomeScreen() {
         <CenteredMessage
           icon="duck"
           iconColor={colors.border}
-          title="All clear"
-          body="No emails need your attention today."
+          title={t("home.allClear")}
+          body={t("home.noAttention")}
         />
       );
     }
@@ -272,12 +275,13 @@ export default function HomeScreen() {
           <MaterialCommunityIcons name="duck" size={28} color={colors.accent} />
           <View>
             <ThemedText type="subtitle" style={styles.headerTitle}>
-              Today
+              {t("home.title")}
             </ThemedText>
             {!!data?.length && (
               <ThemedText themeColor="textSecondary" style={styles.headerMeta}>
-                {data.length} {data.length === 1 ? "email" : "emails"}
-                {needsAttention > 0 && ` · ${needsAttention} need attention`}
+                {t("home.emailCount", { count: data.length })}
+                {needsAttention > 0 &&
+                  ` ${t("home.needAttention", { count: needsAttention })}`}
               </ThemedText>
             )}
           </View>

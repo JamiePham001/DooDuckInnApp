@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { fetchAuthSession } from "aws-amplify/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
@@ -31,6 +31,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ISupplier {
   id: number;
@@ -51,19 +52,19 @@ const fetchSuppliers = async (jwtToken: string): Promise<ISupplier[]> => {
   return await res.json();
 };
 
-// TODO: still a no-op — swiping a supplier row confirms, then does nothing. Pre-existing
-// gap, left alone here because wiring up the DELETE is a behaviour change, not a restyle.
-const deleteSupplier = (id: number) => {};
-
 function SupplierRow({
   supplier,
   index,
+  jwtToken,
 }: {
   supplier: ISupplier;
   index: number;
+  jwtToken: string;
 }) {
   const colors = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const [pressed, setPressed] = useState(false);
 
@@ -78,6 +79,24 @@ function SupplierRow({
     ],
   }));
 
+  const deleteSupplier = async (id: number, jwtToken: string) => {
+    try {
+      const res = await fetch(`http://${API_HOST}:5010/api/suppliers/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      if (!res.ok) throw new Error(`Failed to delete supplier: ${res.status}`);
+
+      queryClient.setQueryData<ISupplier[]>(
+        ["suppliers", jwtToken],
+        (current) => current?.filter((s) => s.id != id),
+      );
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (error) {
+      console.error("Failed to delete report:", error);
+    }
+  };
+
   return (
     <Animated.View
       entering={FadeInDown.duration(Motion.base).delay(
@@ -86,8 +105,8 @@ function SupplierRow({
       style={animatedStyle}
     >
       <SwipeToDelete
-        confirmMessage={`Delete the supplier ${supplier.name}? This can't be undone.`}
-        onDelete={() => deleteSupplier(supplier.id)}
+        confirmMessage={t("order.deleteSupplierConfirm", { name: supplier.name })}
+        onDelete={() => deleteSupplier(supplier.id, jwtToken)}
         borderRadius={Radius.lg}
       >
         <Pressable
@@ -131,6 +150,7 @@ export default function OrderPage() {
   const [jwtToken, setJwtToken] = useState("");
   const router = useRouter();
   const colors = useTheme();
+  const { t } = useI18n();
 
   useEffect(() => {
     const getToken = async () => {
@@ -141,7 +161,7 @@ export default function OrderPage() {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -168,10 +188,10 @@ export default function OrderPage() {
             color={colors.critical}
           />
           <ThemedText style={styles.messageTitle}>
-            Couldn&apos;t load suppliers
+            {t("order.loadError")}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-            Check your connection and try again.
+            {t("common.checkConnection")}
           </ThemedText>
         </View>
       );
@@ -191,9 +211,11 @@ export default function OrderPage() {
       return (
         <View style={styles.message}>
           <Ionicons name="storefront-outline" size={64} color={colors.border} />
-          <ThemedText style={styles.messageTitle}>No suppliers yet</ThemedText>
+          <ThemedText style={styles.messageTitle}>
+            {t("order.emptyTitle")}
+          </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-            Add a supplier to start building orders.
+            {t("order.emptyBody")}
           </ThemedText>
         </View>
       );
@@ -202,7 +224,12 @@ export default function OrderPage() {
     return (
       <View style={styles.list}>
         {data.map((supplier, index) => (
-          <SupplierRow key={supplier.id} supplier={supplier} index={index} />
+          <SupplierRow
+            key={supplier.id}
+            supplier={supplier}
+            index={index}
+            jwtToken={jwtToken}
+          />
         ))}
       </View>
     );
@@ -217,9 +244,9 @@ export default function OrderPage() {
         ]}
       >
         <View style={styles.header}>
-          <ThemedText style={styles.title}>Suppliers</ThemedText>
+          <ThemedText style={styles.title}>{t("order.suppliersTitle")}</ThemedText>
           <Button
-            title="New"
+            title={t("common.new")}
             icon="add"
             onPress={() => router.push({ pathname: "/order/create_vendor" })}
           />

@@ -25,6 +25,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ITransactionRes {
   id: number;
@@ -103,6 +104,7 @@ function DebouncedNameInput({
   onSave: (name: string) => Promise<Response>;
 }) {
   const colors = useTheme();
+  const { t } = useI18n();
   const style = useCellStyle(2);
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,7 +131,7 @@ function DebouncedNameInput({
     <TextInput
       value={name}
       onChangeText={handleChange}
-      placeholder="Description"
+      placeholder={t("gst.table.namePlaceholder")}
       placeholderTextColor={colors.textSecondary}
       style={style}
     />
@@ -234,6 +236,7 @@ const GstTable = ({
   highlightId,
 }: TableProps) => {
   const colors = useTheme();
+  const { t } = useI18n();
   const [tableArray, setTableArray] = useState(array);
   const [creating, setCreating] = useState(false);
   useEffect(() => {
@@ -317,20 +320,22 @@ const GstTable = ({
           ]}
         >
           <ThemedText themeColor="textSecondary" style={styles.headerCell2}>
-            Name
+            {t("common.nameColumn")}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
-            Amount
+            {t("gst.table.amount")}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
-            GST
+            {t("gst.table.gst")}
           </ThemedText>
         </ThemedView>
 
         {tableArray.map((transaction) => (
           <SwipeToDelete
             key={transaction.id}
-            confirmMessage={`Delete "${transaction.name || "this transaction"}"? This can't be undone.`}
+            confirmMessage={t("common.deleteNamedConfirm", {
+              name: transaction.name || t("gst.unnamedTransaction"),
+            })}
             onDelete={() => deleteRow(transaction.id)}
             borderRadius={0}
           >
@@ -385,7 +390,7 @@ const GstTable = ({
         >
           <Ionicons name="add" size={18} color={colors.accent} />
           <ThemedText style={[styles.addRowText, { color: colors.accent }]}>
-            Add row
+            {t("gst.table.addRow")}
           </ThemedText>
         </PressableScale>
       </ThemedView>

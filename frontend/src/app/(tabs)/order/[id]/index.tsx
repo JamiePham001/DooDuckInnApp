@@ -28,6 +28,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ISupplier {
   id: number;
@@ -80,6 +81,7 @@ function DebouncedItemNameInput({
   onSave: (name: string) => Promise<Response>;
 }) {
   const colors = useTheme();
+  const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -102,7 +104,7 @@ function DebouncedItemNameInput({
     <TextInput
       value={name}
       onChangeText={handleChange}
-      placeholder="Item name"
+      placeholder={t("order.itemNamePlaceholder")}
       placeholderTextColor={colors.textSecondary}
       style={{
         flex: 2,
@@ -166,6 +168,7 @@ export default function VendorDetailPage() {
   const supplierId = Number(id);
   const router = useRouter();
   const colors = useTheme();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
   const [itemsArray, setItemsArray] = useState<IItem[]>([]);
   const [creating, setCreating] = useState(false);
@@ -179,7 +182,7 @@ export default function VendorDetailPage() {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -267,10 +270,10 @@ export default function VendorDetailPage() {
           color={colors.critical}
         />
         <ThemedText style={styles.messageTitle}>
-          Couldn&apos;t load this vendor
+          {t("order.loadDetailError")}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-          Check your connection and try again.
+          {t("common.checkConnection")}
         </ThemedText>
       </ThemedView>
     );
@@ -305,7 +308,7 @@ export default function VendorDetailPage() {
 
         <View style={styles.actionsRow}>
           <Button
-            title="Edit"
+            title={t("order.editButton")}
             icon="create-outline"
             variant="secondary"
             onPress={() =>
@@ -317,7 +320,7 @@ export default function VendorDetailPage() {
             style={styles.action}
           />
           <Button
-            title="Send order"
+            title={t("order.sendOrderButton")}
             icon="paper-plane-outline"
             onPress={() =>
               router.push({
@@ -330,7 +333,9 @@ export default function VendorDetailPage() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Items</ThemedText>
+          <ThemedText style={styles.sectionTitle}>
+            {t("order.itemsTitle")}
+          </ThemedText>
           <ThemedView
             style={[
               styles.tableContainer,
@@ -345,17 +350,19 @@ export default function VendorDetailPage() {
               ]}
             >
               <ThemedText themeColor="textSecondary" style={styles.headerCell2}>
-                Name
+                {t("common.nameColumn")}
               </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.headerCell1}>
-                Qty
+                {t("order.qtyColumn")}
               </ThemedText>
             </ThemedView>
 
             {itemsArray.map((item) => (
               <SwipeToDelete
                 key={item.id}
-                confirmMessage={`Delete "${item.name || "this item"}"? This can't be undone.`}
+                confirmMessage={t("common.deleteNamedConfirm", {
+                  name: item.name || t("order.unnamedItem"),
+                })}
                 onDelete={() => deleteItem(item.id)}
                 borderRadius={0}
               >
@@ -409,7 +416,7 @@ export default function VendorDetailPage() {
             >
               <Ionicons name="add" size={18} color={colors.accent} />
               <ThemedText style={[styles.addRowText, { color: colors.accent }]}>
-                Add item
+                {t("order.addItem")}
               </ThemedText>
             </PressableScale>
           </ThemedView>

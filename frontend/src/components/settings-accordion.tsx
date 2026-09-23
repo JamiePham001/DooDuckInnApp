@@ -1,5 +1,5 @@
 import React, { type ComponentProps } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Alert, Pressable, StyleSheet, Text } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -11,12 +11,12 @@ import {
   BottomTabInset,
   Hairline,
   Motion,
-  Radius,
-  Shadow,
   Spacing,
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
+import { LOCALES, type Locale } from "@/i18n";
 
 type Props = {
   visible: boolean;
@@ -43,12 +43,12 @@ function SettingsRow({
           <Ionicons
             name={pressed ? filledIcon : icon}
             size={20}
-            color={pressed ? colors.accent : colors.textSecondary}
+            color={pressed ? colors.tabActive : colors.tabInactive}
           />
           <Text
             style={[
               styles.text,
-              { color: pressed ? colors.accent : colors.text },
+              { color: pressed ? colors.tabActive : colors.tabInactive },
             ]}
           >
             {label}
@@ -61,6 +61,7 @@ function SettingsRow({
 
 export function SettingsAccordion({ visible, onClose }: Props) {
   const colors = useTheme();
+  const { t, locale, setLocale } = useI18n();
 
   const style = useAnimatedStyle(() => ({
     // Content is a couple of fixed-height rows — a real max-content height, not "100%"
@@ -72,17 +73,29 @@ export function SettingsAccordion({ visible, onClose }: Props) {
 
   const { signOut } = useAuthenticator();
 
+  // A native Alert with one button per language is enough for a 2-item picker —
+  // no reason to build a custom modal for this. Names are shown in each language's
+  // own script (e.g. "Tiếng Việt"), not translated, matching every OS's own picker.
+  const chooseLanguage = () => {
+    onClose();
+    Alert.alert(t("settings.chooseLanguage"), undefined, [
+      ...(Object.entries(LOCALES) as [Locale, string][]).map(
+        ([code, name]) => ({
+          text: code === locale ? `✓ ${name}` : name,
+          onPress: () => setLocale(code),
+        }),
+      ),
+      { text: t("common.cancel"), style: "cancel" as const },
+    ]);
+  };
+
   return (
     <Animated.View
       style={[
         styles.container,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.tabBar,
           borderTopColor: colors.border,
-          // A light sheet rather than the tab bar's blue: dark-on-white is far easier to
-          // read than the pale-blue-on-blue it used to be. The shadow is what separates
-          // it from the screen content it slides over.
-          ...Shadow.raised,
         },
         style,
       ]}
@@ -91,13 +104,13 @@ export function SettingsAccordion({ visible, onClose }: Props) {
       <SettingsRow
         icon="language-outline"
         filledIcon="language"
-        label="Language"
-        onPress={onClose}
+        label={t("settings.language")}
+        onPress={chooseLanguage}
       />
       <SettingsRow
         icon="log-out-outline"
         filledIcon="log-out"
-        label="Log Out"
+        label={t("settings.logOut")}
         onPress={signOut}
       />
     </Animated.View>
@@ -111,8 +124,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: BottomTabInset,
     borderTopWidth: Hairline,
-    borderTopLeftRadius: Radius.lg,
-    borderTopRightRadius: Radius.lg,
     overflow: "hidden",
   },
   row: {

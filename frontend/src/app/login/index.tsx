@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/themed-view";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Radius, Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 const USERNAME = process.env.EXPO_PUBLIC_LOGIN_USERNAME!;
 const PIN_LENGTH = 6;
@@ -15,6 +16,7 @@ const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
 export default function LoginScreen() {
   const theme = useTheme();
+  const { t } = useI18n();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -32,7 +34,7 @@ export default function LoginScreen() {
     try {
       await signIn({ username: USERNAME, password: pin });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign in failed.");
+      setError(e instanceof Error ? e.message : t("login.signInFailed"));
       setPin("");
     } finally {
       setSubmitting(false);
@@ -52,9 +54,9 @@ export default function LoginScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.brand}>
         <MaterialCommunityIcons name="duck" size={64} color={theme.accent} />
-        <ThemedText style={styles.title}>Doo Duck Inn</ThemedText>
+        <ThemedText style={styles.title}>{t("login.title")}</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          Enter your PIN to continue
+          {t("login.subtitle")}
         </ThemedText>
       </View>
 

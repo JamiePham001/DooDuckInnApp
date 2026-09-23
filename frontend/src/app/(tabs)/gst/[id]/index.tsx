@@ -24,6 +24,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ITransactionRes {
   id: number;
@@ -50,6 +51,7 @@ export default function GstReportEditorPage() {
   const taxId = Number(id);
   const router = useRouter();
   const colors = useTheme();
+  const { t } = useI18n();
 
   const [soldArr, setSoldArr] = useState<ITransactionRes[]>([]);
   const [purchaseArr, setPurchaseArr] = useState<ITransactionRes[]>([]);
@@ -77,7 +79,7 @@ export default function GstReportEditorPage() {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -210,10 +212,10 @@ export default function GstReportEditorPage() {
           color={colors.critical}
         />
         <ThemedText style={styles.messageTitle}>
-          Couldn&apos;t load this report
+          {t("gst.loadDetailError")}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-          Check your connection and try again.
+          {t("common.checkConnection")}
         </ThemedText>
       </ThemedView>
     );
@@ -224,7 +226,7 @@ export default function GstReportEditorPage() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.actions}>
           <Button
-            title="Scan"
+            title={t("gst.scanButton")}
             icon="camera-outline"
             variant="secondary"
             onPress={() =>
@@ -237,7 +239,7 @@ export default function GstReportEditorPage() {
             style={styles.action}
           />
           <Button
-            title="Send"
+            title={t("gst.sendButton")}
             icon="paper-plane-outline"
             onPress={sendReport}
             loading={sending}
@@ -246,7 +248,7 @@ export default function GstReportEditorPage() {
         </View>
 
         <GstTable
-          title="Sold"
+          title={t("gst.soldTable")}
           array={soldArr}
           jwtToken={jwtToken}
           taxId={taxId}
@@ -254,7 +256,7 @@ export default function GstReportEditorPage() {
           highlightId={highlightId}
         />
         <GstTable
-          title="Purchases"
+          title={t("gst.purchasesTable")}
           array={purchaseArr}
           jwtToken={jwtToken}
           taxId={taxId}

@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 import { router, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dropdown } from "react-native-element-dropdown";
@@ -38,17 +39,18 @@ const years = [
   { label: "2035", value: 2035 },
 ];
 
-const months = [
-  { label: "January - March", start: "01", end: "03" },
-  { label: "April - June", start: "04", end: "06" },
-  { label: "July - September", start: "07", end: "09" },
-  { label: "October - December", start: "10", end: "12" },
-];
-
 const CreateReport = () => {
   const queryClient = useQueryClient();
   const colors = useTheme();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
+
+  const months = [
+    { label: t("gst.quarters.q1"), start: "01", end: "03" },
+    { label: t("gst.quarters.q2"), start: "04", end: "06" },
+    { label: t("gst.quarters.q3"), start: "07", end: "09" },
+    { label: t("gst.quarters.q4"), start: "10", end: "12" },
+  ];
 
   const [year, setYear] = useState(null);
   const [startMonth, setStartMonth] = useState("");
@@ -69,7 +71,7 @@ const CreateReport = () => {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -102,7 +104,7 @@ const CreateReport = () => {
       router.push({ pathname: "/gst/[id]", params: { id: tax.id.toString() } });
     } catch (err) {
       console.error("Failed to create tax report:", err);
-      Alert.alert("Error", "Could not create a new GST report.");
+      Alert.alert(t("common.error"), t("gst.createReportFailed"));
     } finally {
       setCreating(false);
     }
@@ -119,14 +121,14 @@ const CreateReport = () => {
 
   return (
     <ThemedView style={styles.screen}>
-      <Stack.Screen options={{ title: "New Report" }} />
+      <Stack.Screen options={{ title: t("gst.newReportTitle") }} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText themeColor="textSecondary" style={styles.intro}>
-          Pick the year and quarter this report covers.
+          {t("gst.reportIntro")}
         </ThemedText>
 
         <ThemedText themeColor="textSecondary" style={styles.label}>
-          Year
+          {t("gst.yearLabel")}
         </ThemedText>
         <Dropdown
           style={dropdownStyle(isFocus)}
@@ -144,7 +146,7 @@ const CreateReport = () => {
           valueField="label"
           maxHeight={300}
           value={year}
-          placeholder={!isFocus ? "Select a year" : "..."}
+          placeholder={!isFocus ? t("gst.yearPlaceholder") : "..."}
           onFocus={() => setIsFocus(true)}
           onBlur={() => setIsFocus(false)}
           onChange={(item) => {
@@ -154,7 +156,7 @@ const CreateReport = () => {
         />
 
         <ThemedText themeColor="textSecondary" style={styles.label}>
-          Quarter
+          {t("gst.quarterLabel")}
         </ThemedText>
         <Dropdown
           style={dropdownStyle(isFocus2)}
@@ -172,7 +174,7 @@ const CreateReport = () => {
           valueField="start"
           maxHeight={300}
           value={startMonth}
-          placeholder={!isFocus2 ? "Select a quarter" : "..."}
+          placeholder={!isFocus2 ? t("gst.quarterPlaceholder") : "..."}
           onFocus={() => setIsFocus2(true)}
           onBlur={() => setIsFocus2(false)}
           onChange={(item) => {
@@ -183,7 +185,7 @@ const CreateReport = () => {
         />
 
         <Button
-          title={creating ? "Creating..." : "Create report"}
+          title={creating ? t("common.creating") : t("gst.createReport")}
           onPress={handleCreate}
           loading={creating}
           disabled={!canCreate}

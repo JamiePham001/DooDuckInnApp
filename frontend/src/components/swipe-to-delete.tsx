@@ -5,6 +5,7 @@ import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
 import { Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 type Props = {
   children: ReactNode;
@@ -23,8 +24,20 @@ export function SwipeToDelete({
   borderRadius,
 }: Props) {
   const colors = useTheme();
+  const { t } = useI18n();
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
+
+  // Ties the action panel's visibility to how far it's actually been swiped open,
+  // rather than leaving it permanently opaque behind the row. At rest (translateX 0)
+  // it's fully transparent, which is what stops it from ever being able to flash
+  // through — previously it relied entirely on the row content painting on top of it
+  // fast enough, which isn't guaranteed on the very first render.
+  const actionOpacity = translateX.interpolate({
+    inputRange: [-DELETE_WIDTH, 0],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
 
   function resetPosition() {
     isOpen.current = false;
@@ -33,12 +46,11 @@ export function SwipeToDelete({
 
   function confirmDelete() {
     Alert.alert(
-      "Confirm delete",
-      confirmMessage ??
-        "Are you sure you want to delete this? This can't be undone.",
+      t("common.confirmDeleteTitle"),
+      confirmMessage ?? t("common.confirmDeleteBody"),
       [
-        { text: "Cancel", style: "cancel", onPress: resetPosition },
-        { text: "Delete", style: "destructive", onPress: onDelete },
+        { text: t("common.cancel"), style: "cancel", onPress: resetPosition },
+        { text: t("common.delete"), style: "destructive", onPress: onDelete },
       ],
     );
   }
@@ -79,14 +91,18 @@ export function SwipeToDelete({
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView
+      <Animated.View
         style={[
           styles.action,
-          { borderRadius: borderRadius, backgroundColor: colors.critical },
+          {
+            borderRadius: borderRadius,
+            backgroundColor: colors.critical,
+            opacity: actionOpacity,
+          },
         ]}
       >
-        <ThemedText style={styles.actionText}>Delete</ThemedText>
-      </ThemedView>
+        <ThemedText style={styles.actionText}>{t("common.delete")}</ThemedText>
+      </Animated.View>
       <Animated.View
         style={{ transform: [{ translateX }] }}
         {...panResponder.panHandlers}

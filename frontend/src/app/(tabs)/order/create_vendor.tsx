@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Motion, Spacing } from "@/constants/theme";
+import { useI18n } from "@/hooks/use-i18n";
 import { useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 interface ISupplier {
@@ -22,6 +23,7 @@ const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
 const CreateVendor = () => {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
 
   const [name, setName] = useState("");
@@ -38,7 +40,7 @@ const CreateVendor = () => {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -47,7 +49,7 @@ const CreateVendor = () => {
   async function handleCreate() {
     if (creating) return;
     if (!name.trim() || !email.trim()) {
-      Alert.alert("Missing details", "Name and email are required.");
+      Alert.alert(t("common.missingDetails"), t("order.nameAndEmailRequired"));
       return;
     }
 
@@ -76,7 +78,7 @@ const CreateVendor = () => {
       });
     } catch (err) {
       console.error("Failed to create vendor:", err);
-      Alert.alert("Error", "Could not create a new vendor.");
+      Alert.alert(t("common.error"), t("order.createVendorFailed"));
     } finally {
       setCreating(false);
     }
@@ -84,35 +86,35 @@ const CreateVendor = () => {
 
   return (
     <ThemedView style={styles.screen}>
-      <Stack.Screen options={{ title: "New Vendor" }} />
+      <Stack.Screen options={{ title: t("order.newSupplierTitle") }} />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
         <Input
-          label="Name"
-          placeholder="Bidfood"
+          label={t("order.nameLabel")}
+          placeholder={t("order.namePlaceholder")}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
         <Input
-          label="Email"
-          placeholder="orders@supplier.com"
+          label={t("order.emailLabel")}
+          placeholder={t("order.emailPlaceholder")}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         <Input
-          label="Phone (optional)"
-          placeholder="08 9000 0000"
+          label={t("order.phoneLabel")}
+          placeholder={t("order.phonePlaceholder")}
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
         <Button
-          title={creating ? "Creating..." : "Create vendor"}
+          title={creating ? t("common.creating") : t("order.createVendor")}
           onPress={handleCreate}
           loading={creating}
           style={styles.submit}

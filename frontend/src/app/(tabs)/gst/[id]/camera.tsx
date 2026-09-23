@@ -6,6 +6,7 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Spacing, Typography } from "@/constants/theme";
+import { useI18n } from "@/hooks/use-i18n";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -19,6 +20,7 @@ const InvoiceScan = () => {
   const [scanning, setScanning] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useI18n();
 
   const API_HOST = Platform.OS === "android" ? "10.0.2.2" : "localhost";
 
@@ -34,7 +36,7 @@ const InvoiceScan = () => {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -50,12 +52,12 @@ const InvoiceScan = () => {
     return (
       <ThemedView style={styles.permission}>
         <ThemedText style={styles.permissionTitle}>
-          Camera access needed
+          {t("gst.cameraPermissionTitle")}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.message}>
-          Allow camera access so you can scan receipts and invoices.
+          {t("gst.cameraPermissionBody")}
         </ThemedText>
-        <Button title="Grant permission" onPress={requestPermission} />
+        <Button title={t("gst.grantPermission")} onPress={requestPermission} />
       </ThemedView>
     );
   }
@@ -91,7 +93,7 @@ const InvoiceScan = () => {
       router.back();
     } catch (error) {
       console.error("Scan image failed: ", error);
-      Alert.alert("Scan failed", "Could not process the receipt. Please try again.");
+      Alert.alert(t("gst.scanFailedTitle"), t("gst.scanFailedBody"));
     } finally {
       setScanning(false);
     }
@@ -105,18 +107,18 @@ const InvoiceScan = () => {
   const renderPicture = (uri: string) => {
     return (
       <ThemedView style={styles.preview}>
-        <Stack.Screen options={{ title: "Check the photo" }} />
+        <Stack.Screen options={{ title: t("gst.checkPhotoTitle") }} />
         <Image
           source={{ uri }}
           contentFit="contain"
           style={styles.previewImage}
         />
         <ThemedText themeColor="textSecondary" style={styles.message}>
-          Make sure the invoice is in frame and well lit before scanning.
+          {t("gst.scanHint")}
         </ThemedText>
         <View style={styles.previewActions}>
           <Button
-            title="Retake"
+            title={t("gst.retake")}
             icon="refresh-outline"
             variant="secondary"
             onPress={() => setUri(null)}
@@ -124,7 +126,7 @@ const InvoiceScan = () => {
             style={styles.previewAction}
           />
           <Button
-            title={scanning ? "Scanning..." : "Scan"}
+            title={scanning ? t("gst.scanning") : t("gst.scanButton")}
             icon="scan-outline"
             onPress={() => scanImage(uri)}
             loading={scanning}
@@ -140,7 +142,7 @@ const InvoiceScan = () => {
       <ThemedView style={styles.container}>
         <Stack.Screen
           options={{
-            title: "Scan",
+            title: t("gst.scanTitle"),
           }}
         />
         <CameraView

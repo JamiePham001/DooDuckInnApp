@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spacing } from "@/constants/theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ISupplier {
   id: number;
@@ -35,6 +36,7 @@ const EditVendor = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const supplierId = Number(id);
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
 
   const [name, setName] = useState("");
@@ -51,7 +53,7 @@ const EditVendor = () => {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -74,11 +76,11 @@ const EditVendor = () => {
   async function handleSave() {
     if (saving) return;
     if (!name.trim()) {
-      Alert.alert("Missing details", "Name is required.");
+      Alert.alert(t("common.missingDetails"), t("order.nameRequired"));
       return;
     }
     if (!EMAIL_PATTERN.test(email.trim())) {
-      Alert.alert("Invalid email", "Enter a valid email address.");
+      Alert.alert(t("common.invalidEmail"), t("common.enterValidEmail"));
       return;
     }
 
@@ -106,7 +108,7 @@ const EditVendor = () => {
       router.back();
     } catch (err) {
       console.error("Failed to update vendor:", err);
-      Alert.alert("Error", "Could not save vendor details.");
+      Alert.alert(t("common.error"), t("order.saveVendorFailed"));
     } finally {
       setSaving(false);
     }
@@ -119,29 +121,29 @@ const EditVendor = () => {
         keyboardShouldPersistTaps="handled"
       >
         <Input
-          label="Name"
-          placeholder="Bidfood"
+          label={t("order.nameLabel")}
+          placeholder={t("order.namePlaceholder")}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
         <Input
-          label="Email"
-          placeholder="orders@supplier.com"
+          label={t("order.emailLabel")}
+          placeholder={t("order.emailPlaceholder")}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         <Input
-          label="Phone (optional)"
-          placeholder="08 9000 0000"
+          label={t("order.phoneLabel")}
+          placeholder={t("order.phonePlaceholder")}
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
         <Button
-          title={saving ? "Saving..." : "Save changes"}
+          title={saving ? t("common.saving") : t("order.saveChanges")}
           onPress={handleSave}
           loading={saving}
           style={styles.submit}

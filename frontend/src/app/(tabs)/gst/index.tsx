@@ -22,7 +22,6 @@ import { ThemedView } from "@/components/themed-view";
 import { SwipeToDelete } from "@/components/swipe-to-delete";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PressableScale } from "@/components/ui/pressable-scale";
 import {
   BottomTabInset,
   Motion,
@@ -31,6 +30,7 @@ import {
   Typography,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useI18n } from "@/hooks/use-i18n";
 import { formatDateRange } from "@/utils/format-date-range";
 
 interface ITaxReport {
@@ -65,6 +65,7 @@ function ReportRow({
 }) {
   const colors = useTheme();
   const router = useRouter();
+  const { t } = useI18n();
   const sent = report.isSent;
 
   const [pressed, setPressed] = useState(false);
@@ -88,7 +89,9 @@ function ReportRow({
       style={animatedStyle}
     >
       <SwipeToDelete
-        confirmMessage={`Delete the report for ${formatDateRange(report.startDate, report.endDate)}? This can't be undone.`}
+        confirmMessage={t("gst.deleteReportConfirm", {
+          range: formatDateRange(report.startDate, report.endDate),
+        })}
         onDelete={onDelete}
         borderRadius={Radius.lg}
       >
@@ -123,7 +126,7 @@ function ReportRow({
                     { color: sent ? colors.medium : colors.accent },
                   ]}
                 >
-                  {sent ? "Sent" : "Draft"}
+                  {sent ? t("gst.statusSent") : t("gst.statusDraft")}
                 </ThemedText>
               </View>
             </View>
@@ -143,6 +146,7 @@ export default function GstListPage() {
   const colors = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [jwtToken, setJwtToken] = useState("");
 
   useEffect(() => {
@@ -154,7 +158,7 @@ export default function GstListPage() {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -198,10 +202,10 @@ export default function GstListPage() {
             color={colors.critical}
           />
           <ThemedText style={styles.messageTitle}>
-            Couldn&apos;t load reports
+            {t("gst.loadError")}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-            Check your connection and try again.
+            {t("common.checkConnection")}
           </ThemedText>
         </View>
       );
@@ -225,9 +229,11 @@ export default function GstListPage() {
             size={64}
             color={colors.border}
           />
-          <ThemedText style={styles.messageTitle}>No reports yet</ThemedText>
+          <ThemedText style={styles.messageTitle}>
+            {t("gst.emptyTitle")}
+          </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.messageBody}>
-            Create your first quarterly GST report.
+            {t("gst.emptyBody")}
           </ThemedText>
         </View>
       );
@@ -256,9 +262,9 @@ export default function GstListPage() {
         ]}
       >
         <View style={styles.header}>
-          <ThemedText style={styles.title}>Reports</ThemedText>
+          <ThemedText style={styles.title}>{t("gst.reportsTitle")}</ThemedText>
           <Button
-            title="New"
+            title={t("common.new")}
             icon="add"
             onPress={() => router.push({ pathname: "/gst/create_report" })}
           />

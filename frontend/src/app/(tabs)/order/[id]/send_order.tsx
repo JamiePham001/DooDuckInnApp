@@ -9,6 +9,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spacing, Typography } from "@/constants/theme";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface ISupplier {
   id: number;
@@ -36,6 +37,7 @@ const SendOrder = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const supplierId = Number(id);
   const [jwtToken, setJwtToken] = useState("");
+  const { t } = useI18n();
 
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -49,7 +51,7 @@ const SendOrder = () => {
         setJwtToken(token);
       } catch (err) {
         console.error("Error fetching JWT:", err);
-        Alert.alert("Error", "Could not retrieve authentication token.");
+        Alert.alert(t("common.error"), t("common.authError"));
       }
     };
     getToken();
@@ -70,7 +72,7 @@ const SendOrder = () => {
   async function handleSend() {
     if (sending) return;
     if (!EMAIL_PATTERN.test(email.trim())) {
-      Alert.alert("Invalid email", "Enter a valid email address.");
+      Alert.alert(t("common.invalidEmail"), t("common.enterValidEmail"));
       return;
     }
 
@@ -95,7 +97,7 @@ const SendOrder = () => {
       router.back();
     } catch (err) {
       console.error("Failed to send order:", err);
-      Alert.alert("Error", "Could not send the order email.");
+      Alert.alert(t("common.error"), t("order.sendOrderFailed"));
     } finally {
       setSending(false);
     }
@@ -108,18 +110,18 @@ const SendOrder = () => {
         keyboardShouldPersistTaps="handled"
       >
         <ThemedText themeColor="textSecondary" style={styles.intro}>
-          The current item list will be emailed to this address.
+          {t("order.sendOrderIntro")}
         </ThemedText>
         <Input
-          label="Send to"
-          placeholder="orders@supplier.com"
+          label={t("order.sendToLabel")}
+          placeholder={t("order.emailPlaceholder")}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         <Button
-          title={sending ? "Sending..." : "Send order"}
+          title={sending ? t("common.sending") : t("order.sendOrderButton")}
           icon="paper-plane-outline"
           onPress={handleSend}
           loading={sending}

@@ -29,7 +29,7 @@ public class DigestAgent(AnthropicClient client)
         Subject: "{subject}". Preview: "{snippet}".
         Classify urgency (Critical = needs action today/urgent supplier or compliance issue,
         High = important but not urgent, Medium = routine, Low = newsletter/promo/noise) and
-        write a one-sentence plain-English summary of what this email is about.
+        write a one-sentence summary in Vietnamese of what this email is about.
         """);
 
         return ParseFromJson(text);

@@ -4,6 +4,7 @@ import React from "react";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Colors } from "@/constants/theme";
+import { I18nProvider, useI18n } from "@/hooks/use-i18n";
 import { useSchemeName } from "@/hooks/use-theme";
 
 import "react-native-get-random-values";
@@ -55,11 +56,6 @@ class InMemoryStorage implements KeyValueStorageInterface {
 
 cognitoUserPoolsTokenProvider.setKeyValueStorage(new InMemoryStorage());
 
-// TEMP DEV BYPASS: flip to true to skip login entirely (e.g. testing the camera
-// screen under Expo Go, where the Amplify/Cognito login path is unreliable).
-// MUST be flipped back to false before committing/shipping.
-const DEV_SKIP_AUTH = false;
-
 // React Navigation ships its own palette, which has no relationship to the app's Colors —
 // so navigation chrome (header background, back-button tint, the fill behind a screen
 // transition) would disagree with everything the screens draw. Map ours onto its shape.
@@ -85,17 +81,25 @@ function navigationTheme(scheme: "light" | "dark") {
 function Root() {
   const { authStatus } = useAuthenticator((context) => [context.authStatus]);
   const scheme = useSchemeName();
+  const { locale } = useI18n();
 
   // Amplify starts in "configuring" while it checks for a stored session, then settles to
   // authenticated/unauthenticated. Nothing below renders until we know which one.
-  const ready = authStatus !== "configuring" || DEV_SKIP_AUTH;
-  const authed = authStatus === "authenticated" || DEV_SKIP_AUTH;
+  const ready = authStatus !== "configuring";
+  const authed = authStatus === "authenticated";
 
   return (
     <ThemeProvider value={navigationTheme(scheme)}>
       {ready &&
         (authed ? (
+          // Keyed on locale: React Navigation's native header/tab-bar options don't
+          // reliably propagate a language change through every nested Tab/Stack
+          // navigator on their own — remounting the whole tree on switch is what
+          // actually refreshes every header and tab label. TanStack Query's cache is
+          // keyed independently of this component tree, so screens come back showing
+          // their existing cached data immediately, not an empty loading state.
           <Stack
+            key={locale}
             screenOptions={{
               headerShown: false,
               animation: "slide_from_right",
@@ -118,12 +122,14 @@ function Root() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <Authenticator.Provider>
-          <Root />
-        </Authenticator.Provider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <I18nProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <Authenticator.Provider>
+            <Root />
+          </Authenticator.Provider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </I18nProvider>
   );
 }
