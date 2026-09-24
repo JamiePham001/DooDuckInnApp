@@ -243,13 +243,22 @@ export default function GstReportEditorPage() {
           onRequestClose={() => {
             setModalVisible(!modalVisible);
           }}
+          style={{ backgroundColor: colors.background }}
         >
           <TouchableWithoutFeedback
             onPressOut={() => setModalVisible(!modalVisible)}
           >
             <View style={styles.centeredView}>
               <TouchableWithoutFeedback>
-                <View style={styles.modalView}>
+                <ThemedView
+                  style={[
+                    styles.modalView,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.text,
+                    },
+                  ]}
+                >
                   <ThemedText style={[styles.modalHeading]}>
                     {t("gst.sendReportTitle")}
                   </ThemedText>
@@ -275,7 +284,7 @@ export default function GstReportEditorPage() {
                       style={{ backgroundColor: colors.medium }}
                     />
                   </View>
-                </View>
+                </ThemedView>
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
@@ -334,11 +343,12 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
     alignItems: "center",
     shadowColor: "#000",
+    borderWidth: 1,
+    borderStyle: "solid",
     shadowOffset: {
       width: 0,
       height: 2,

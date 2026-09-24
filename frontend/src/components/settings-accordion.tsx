@@ -134,7 +134,12 @@ export function SettingsAccordion({ visible, onClose }: Props) {
         >
           <View style={styles.centeredView}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalView}>
+              <View
+                style={[
+                  styles.modalView,
+                  { backgroundColor: colors.surface, borderColor: colors.text },
+                ]}
+              >
                 <ThemedText style={[styles.modalHeading]}>Languages</ThemedText>
 
                 <Dropdown
@@ -219,6 +224,8 @@ const styles = StyleSheet.create({
     padding: 35,
     alignItems: "stretch",
     shadowColor: "#000",
+    borderWidth: 1,
+    borderStyle: "solid",
     shadowOffset: {
       width: 0,
       height: 2,

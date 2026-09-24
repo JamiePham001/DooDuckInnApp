@@ -131,7 +131,10 @@ export function SwipeToDelete({
                 to the backdrop's onPressOut and dismiss the modal. */}
             <TouchableWithoutFeedback>
               <View
-                style={[styles.modalView, { backgroundColor: colors.surface }]}
+                style={[
+                  styles.modalView,
+                  { backgroundColor: colors.surface, borderColor: colors.text },
+                ]}
               >
                 <ThemedText style={styles.modalHeading}>
                   {t("common.confirmDeleteTitle")}
@@ -186,6 +189,8 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
     alignItems: "center",
     gap: Spacing.two,
+    borderWidth: 1,
+    borderStyle: "solid",
     ...Shadow.raised,
   },
   modalHeading: { ...Typography.title, textAlign: "center" },
