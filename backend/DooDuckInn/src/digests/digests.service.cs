@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DooDuckInn.src.digests;
 
-public class DigestsService(AppDbContext db)
+public class DigestsService(AppDbContext db, GmailClient gmail, DigestAgent agent, ILogger<DigestsService> logger)
 {
     public async Task<List<DigestItem>> GetLatestAsync()
     {
@@ -23,5 +23,26 @@ public class DigestsService(AppDbContext db)
     {
         db.Digests.AddRange(items);
         await db.SaveChangesAsync();
+    }
+
+    // Shared by DailyDigestBackgroundService's scheduled run and DigestsController's manual
+    // "run now" endpoint — fetches, summarizes, and saves today's digest. Returns what was saved.
+    public async Task<List<DigestItem>> RunAsync(DateOnly today)
+    {
+        var emails = await gmail.FetchRecentAsync();
+        var items = new List<DigestItem>();
+        foreach (var email in emails)
+        {
+            try
+            {
+                var (priority, summary) = await agent.SummarizeAsync(email.SenderName, email.Subject, email.Snippet);
+                items.Add(new DigestItem(today, email.MessageId, email.SenderName, email.SenderEmail,
+                    email.Subject, summary, priority, email.ReceivedAt));
+            }
+            catch (DigestAgentException ex) { logger.LogWarning(ex, "Skipped one email in digest."); }
+        }
+        await SaveAsync(items);
+        logger.LogInformation("Digest saved: {Count} items for {Date}", items.Count, today);
+        return items;
     }
 }

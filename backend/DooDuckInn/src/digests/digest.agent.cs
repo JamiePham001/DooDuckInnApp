@@ -24,12 +24,18 @@ public class DigestAgent(AnthropicClient client)
             summary = new { type = "string" },
         }, required: ["priority", "summary"]);
 
-        var text = await CallAsync(schema, $"""
-        You are triaging inbox email for a takeaway shop owner for business and personal. Sender: "{senderName}".
-        Subject: "{subject}". Preview: "{snippet}".
+        // The trailing "Respond with ONLY..." line is load-bearing, not decorative — confirmed
+        // (see transaction.agent.cs) that GLM via Z.ai doesn't reliably honor the JSON-schema
+        // OutputConfig alone; it sometimes answers in markdown prose instead. Repeating the exact
+        // shape in-prompt is what makes it actually return JSON.
+        var text = await CallAsync(schema, $$"""
+        You are triaging inbox email for a takeaway shop owner for business and personal. Sender: "{{senderName}}".
+        Subject: "{{subject}}". Preview: "{{snippet}}".
         Classify urgency (Critical = needs action today/urgent supplier or compliance issue,
         High = important but not urgent, Medium = routine, Low = newsletter/promo/noise) and
         write a one-sentence summary in Vietnamese of what this email is about.
+        Respond with ONLY a raw JSON object — no markdown, no headings, no explanation — in
+        exactly this shape: {"priority": "Critical" | "High" | "Medium" | "Low", "summary": string}.
         """);
 
         return ParseFromJson(text);
@@ -66,8 +72,37 @@ public class DigestAgent(AnthropicClient client)
         if (response.StopReason == "refusal")
             throw new DigestAgentException("Claude declined to process this request.");
 
-        return response.Content.Select(b => b.Value).OfType<TextBlock>().FirstOrDefault()?.Text
+        var text = response.Content.Select(b => b.Value).OfType<TextBlock>().FirstOrDefault()?.Text
             ?? throw new DigestAgentException("Claude returned no usable output.");
+
+        return ExtractJsonObject(text);
+    }
+
+    // See TransactionAgent.ExtractJsonObject — same GLM/Z.ai quirk, same fix: scan out the first
+    // balanced {...} object instead of trusting the whole response to already be bare JSON.
+    private static string ExtractJsonObject(string text)
+    {
+        var start = text.IndexOf('{');
+        if (start == -1) return text;
+
+        var depth = 0;
+        var inString = false;
+        var escaped = false;
+        for (var i = start; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (inString)
+            {
+                if (escaped) escaped = false;
+                else if (c == '\\') escaped = true;
+                else if (c == '"') inString = false;
+                continue;
+            }
+            if (c == '"') inString = true;
+            else if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return text[start..(i + 1)];
+        }
+        return text[start..];
     }
 
     public static (DigestPriority Priority, string Summary) ParseFromJson(string json)

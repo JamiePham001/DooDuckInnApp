@@ -51,22 +51,6 @@ public class DailyDigestBackgroundService(IServiceScopeFactory scopeFactory, ILo
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, PerthTz));
         if (await digests.HasRunTodayAsync(today)) return;
 
-        var gmail = scope.ServiceProvider.GetRequiredService<GmailClient>();
-        var agent = scope.ServiceProvider.GetRequiredService<DigestAgent>();
-
-        var emails = await gmail.FetchRecentAsync();
-        var items = new List<DigestItem>();
-        foreach (var email in emails)
-        {
-            try
-            {
-                var (priority, summary) = await agent.SummarizeAsync(email.SenderName, email.Subject, email.Snippet);
-                items.Add(new DigestItem(today, email.MessageId, email.SenderName, email.SenderEmail,
-                    email.Subject, summary, priority, email.ReceivedAt));
-            }
-            catch (DigestAgentException ex) { logger.LogWarning(ex, "Skipped one email in digest."); }
-        }
-        await digests.SaveAsync(items);
-        logger.LogInformation("Digest saved: {Count} items for {Date}", items.Count, today);
+        await digests.RunAsync(today);
     }
 }
