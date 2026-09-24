@@ -17,7 +17,7 @@ public static class OrderEmail
 
     foreach (var item in items)
     {
-      lines.Add($"  {item.Quantity} x {item.Name}");
+      lines.Add($"  {item.Quantity ?? 0} x {item.Name}");
     }
 
     lines.Add("");
@@ -33,7 +33,7 @@ public static class OrderEmail
     var rows = string.Join("", items.Select(i => $"""
             <tr>
               <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;">{i.Name}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;">{i.Quantity}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;">{i.Quantity ?? 0}</td>
             </tr>
             """));
 

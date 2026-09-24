@@ -74,7 +74,7 @@ public class TransactionsController(
     }
 
     [HttpPatch("{id}/update/amount")]
-    public async Task<IActionResult> UpdateAmount(int id, double amount)
+    public async Task<IActionResult> UpdateAmount(int id, double? amount)
     {
         try
         {
@@ -93,7 +93,7 @@ public class TransactionsController(
     }
 
     [HttpPatch("{id}/update/gst")]
-    public async Task<IActionResult> UpdateGst(int id, double gst)
+    public async Task<IActionResult> UpdateGst(int id, double? gst)
     {
         try
         {

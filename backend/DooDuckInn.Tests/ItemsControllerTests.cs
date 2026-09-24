@@ -93,6 +93,24 @@ public class ItemsControllerTests(CustomWebApplicationFactory factory)
     }
 
     [Fact]
+    public async Task UpdateQuantity_ReturnsNoContent_AndClearsValue_WhenOmitted()
+    {
+        var client = await NewUserClientAsync("item-sub-8");
+        var item = await CreateItemAsync(client);
+        await client.PatchAsync($"/api/items/{item.Id}/update/quantity?qty=50", null);
+
+        // No `qty` query param at all — this is what the frontend now sends while the
+        // user has cleared the cell, rather than coercing the blank input back to 0.
+        var response = await client.PatchAsync($"/api/items/{item.Id}/update/quantity", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var getResponse = await client.GetAsync($"/api/items/{item.Id}");
+        var updated = await getResponse.Content.ReadFromJsonAsync<ItemDto>();
+        Assert.Null(updated!.Quantity);
+    }
+
+    [Fact]
     public async Task UpdateQuantity_ReturnsNotFound_WhenOwnedByAnotherUser()
     {
         var ownerClient = await NewUserClientAsync("item-sub-owner-2");

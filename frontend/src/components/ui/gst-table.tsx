@@ -32,8 +32,8 @@ interface ITransactionRes {
   id: number;
   taxId: number;
   name: string;
-  amount: number;
-  gst: number;
+  amount: number | null;
+  gst: number | null;
   type: number;
 }
 
@@ -143,14 +143,21 @@ function DebouncedNameInput({
   );
 }
 
+// Blank means "not entered yet", not 0 — parses an empty/whitespace cell to null instead of
+// coercing it to a real 0 value, which is what used to fight the user for every cleared cell.
+function parseAmount(value: string): number | null {
+  const trimmed = value.trim();
+  return trimmed === "" ? null : parseFloat(trimmed);
+}
+
 function DebouncedAmountInput({
   initialAmount,
   onSave,
   amountId,
   setArray,
 }: {
-  initialAmount: number;
-  onSave: (amount: number) => Promise<Response>;
+  initialAmount: number | null;
+  onSave: (amount: number | null) => Promise<Response>;
   amountId: number;
   setArray: Dispatch<React.SetStateAction<ITransactionRes[]>>;
 }) {
@@ -158,23 +165,25 @@ function DebouncedAmountInput({
   const style = useCellStyle(1);
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
-  const [text, setText] = useState(initialAmount.toString());
+  const [text, setText] = useState(initialAmount?.toString() ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleChange(value: string) {
     const previousValue = text;
     setText(value); // updates instantly — the input never feels laggy
+    const parsed = parseAmount(value);
     setArray((prev) =>
       prev.map((obj) =>
-        obj.id === amountId ? { ...obj, amount: +value } : obj,
+        obj.id === amountId ? { ...obj, amount: parsed } : obj,
       ),
     );
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
-        const parsed = parseFloat(value);
-        if (Number.isNaN(parsed)) throw new Error("Amount failed to parse");
+        if (parsed !== null && Number.isNaN(parsed)) {
+          throw new Error("Amount failed to parse");
+        }
         const res = await onSave(parsed); // fires only after ~600ms of no further typing
         if (!res.ok) {
           throw new Error("Failed to update amount");
@@ -183,7 +192,7 @@ function DebouncedAmountInput({
         setText(previousValue);
         setArray((prev) =>
           prev.map((obj) =>
-            obj.id === amountId ? { ...obj, amount: +previousValue } : obj,
+            obj.id === amountId ? { ...obj, amount: parseAmount(previousValue) } : obj,
           ),
         );
       }
@@ -195,6 +204,7 @@ function DebouncedAmountInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
+      placeholder="0"
       placeholderTextColor={colors.textSecondary}
       style={style}
     />
@@ -205,14 +215,14 @@ function DebouncedGstInput({
   initialGst,
   onSave,
 }: {
-  initialGst: number;
-  onSave: (gst: number) => Promise<Response>;
+  initialGst: number | null;
+  onSave: (gst: number | null) => Promise<Response>;
 }) {
   const colors = useTheme();
   const style = useCellStyle(1);
   // Kept as a raw string, not a number — coercing on every keystroke (e.g. +"12.")
   // drops the trailing "." before the user can type a decimal digit after it.
-  const [text, setText] = useState(initialGst.toString());
+  const [text, setText] = useState(initialGst?.toString() ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleChange(value: string) {
@@ -222,8 +232,10 @@ function DebouncedGstInput({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
-        const parsed = parseFloat(value);
-        if (Number.isNaN(parsed)) throw new Error("Amount failed to parse");
+        const parsed = parseAmount(value);
+        if (parsed !== null && Number.isNaN(parsed)) {
+          throw new Error("Amount failed to parse");
+        }
         const res = await onSave(parsed); // fires only after ~600ms of no further typing
 
         if (!res.ok) {
@@ -240,6 +252,7 @@ function DebouncedGstInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
+      placeholder="0"
       placeholderTextColor={colors.textSecondary}
       style={style}
     />
@@ -278,8 +291,8 @@ const GstTable = ({
           body: JSON.stringify({
             taxId,
             name: "",
-            amount: 0,
-            gst: 0,
+            amount: null,
+            gst: null,
             type: transactionType,
           }),
         },
@@ -375,7 +388,9 @@ const GstTable = ({
                 setArray={setTableArray}
                 onSave={(amount) =>
                   fetch(
-                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
+                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount${
+                      amount === null ? "" : `?amount=${encodeURIComponent(amount)}`
+                    }`,
                     {
                       method: "PATCH",
                       headers: { Authorization: `Bearer ${jwtToken}` },
@@ -387,7 +402,9 @@ const GstTable = ({
                 initialGst={transaction.gst}
                 onSave={(gst) =>
                   fetch(
-                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst?gst=${encodeURIComponent(gst)}`,
+                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst${
+                      gst === null ? "" : `?gst=${encodeURIComponent(gst)}`
+                    }`,
                     {
                       method: "PATCH",
                       headers: { Authorization: `Bearer ${jwtToken}` },

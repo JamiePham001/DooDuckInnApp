@@ -50,7 +50,7 @@ public class ItemController(
     }
 
     [HttpPatch("{id}/update/quantity")]
-    public async Task<IActionResult> UpdateQuantity(int id, int qty)
+    public async Task<IActionResult> UpdateQuantity(int id, int? qty)
     {
         try
         {

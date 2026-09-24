@@ -23,7 +23,7 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
 
         builder.Property(i => i.Name).HasMaxLength(150);
 
-        builder.Property(i => i.Quantity).HasDefaultValue(0);
+        builder.Property(i => i.Quantity);
 
         // Backs up UpdateQuantity's app-level check — InMemoryDatabase won't enforce this, but
         // Postgres will if something ever bypasses the model (a raw update, a migration, etc.).

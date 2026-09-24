@@ -5,8 +5,10 @@ public class Transaction
     public int Id { get; }
     public int TaxId { get; private set; }
     public string Name { get; private set; } = default!;
-    public double Amount { get; private set; } = 0.00;
-    public double Gst { get; private set; } = 0.00;
+    // Nullable rather than defaulting to 0 — the frontend leaves these blank while the user is
+    // still typing, and a real 0 is indistinguishable from "not entered yet" once persisted.
+    public double? Amount { get; private set; }
+    public double? Gst { get; private set; }
     public TransactionType Type { get; private set; }
 
     private Transaction() { }
@@ -17,33 +19,33 @@ public class Transaction
 
         Type = type;
     }
-    public Transaction(int taxId, string name, double amount, double gst, TransactionType type)
+    public Transaction(int taxId, string name, double? amount, double? gst, TransactionType type)
     {
-        if (double.IsNegative(amount) || double.IsNegative(gst)) throw new ArgumentException("Amount or gst cant be negative");
+        if (amount < 0 || gst < 0) throw new ArgumentException("Amount or gst cant be negative");
 
         TaxId = taxId;
         Name = name ?? "";
-        Amount = Math.Round(amount, 2);
-        Gst = Math.Round(gst, 2);
+        Amount = Round(amount);
+        Gst = Round(gst);
         Type = type;
     }
 
-    public void UpdateInstance(string name, double amount, double gst, TransactionType type)
+    public void UpdateInstance(string name, double? amount, double? gst, TransactionType type)
     {
-        if (double.IsNegative(amount) || double.IsNegative(gst)) throw new ArgumentException("Amount or gst cant be negative");
+        if (amount < 0 || gst < 0) throw new ArgumentException("Amount or gst cant be negative");
 
         Name = name ?? "";
-        Amount = Math.Round(amount, 2);
-        Gst = Math.Round(gst, 2);
+        Amount = Round(amount);
+        Gst = Round(gst);
         Type = type;
     }
 
-    public void UpdateNums(double amount, double gst)
+    public void UpdateNums(double? amount, double? gst)
     {
-        if (double.IsNegative(amount) || double.IsNegative(gst)) throw new ArgumentException("Amount or gst cant be negative");
+        if (amount < 0 || gst < 0) throw new ArgumentException("Amount or gst cant be negative");
 
-        Amount = Math.Round(amount, 2);
-        Gst = Math.Round(gst, 2);
+        Amount = Round(amount);
+        Gst = Round(gst);
     }
 
     public void UpdateName(string name)
@@ -51,22 +53,24 @@ public class Transaction
         Name = name ?? "";
     }
 
-    public void UpdateAmount(double amount)
+    public void UpdateAmount(double? amount)
     {
-        if (double.IsNegative(amount)) throw new ArgumentException("Amount cant be negative");
-        Amount = Math.Round(amount, 2);
+        if (amount < 0) throw new ArgumentException("Amount cant be negative");
+        Amount = Round(amount);
     }
 
-    public void UpdateGst(double gst)
+    public void UpdateGst(double? gst)
     {
-        if (double.IsNegative(gst)) throw new ArgumentException("Amount cant be negative");
-        Gst = Math.Round(gst, 2);
+        if (gst < 0) throw new ArgumentException("Amount cant be negative");
+        Gst = Round(gst);
     }
 
     public void UpdateType(TransactionType type)
     {
         Type = type;
     }
+
+    private static double? Round(double? value) => value is null ? null : Math.Round(value.Value, 2);
 }
 
 public enum TransactionType

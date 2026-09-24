@@ -6,5 +6,5 @@ namespace DooDuckInn.Tests;
 public record UserDto(int Id, string CognitoSub, string Email);
 public record TaxDto(int Id, int UserId, DateOnly StartDate, DateOnly EndDate, bool IsSent);
 public record SupplierDto(int Id, int UserId, string Name, string Email, string Phone);
-public record ItemDto(int Id, int SupplierId, string Name, int Quantity);
-public record TransactionDto(int Id, int TaxId, string Name, double Amount, double Gst, int Type);
+public record ItemDto(int Id, int SupplierId, string Name, int? Quantity);
+public record TransactionDto(int Id, int TaxId, string Name, double? Amount, double? Gst, int Type);

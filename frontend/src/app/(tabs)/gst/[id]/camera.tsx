@@ -10,6 +10,7 @@ import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { File } from "expo-file-system";
 import { setPendingScannedTransactionId } from "@/utils/scan-signal";
 import { API_HOST } from "@/constants/api";
 
@@ -46,12 +47,10 @@ const InvoiceScan = () => {
 
   const scanImage = async (uri: string) => {
     setScanning(true);
+    // RN's fetch/FormData no longer accepts the old { uri, name, type } file-part shape —
+    // it now requires an actual Blob, which expo-file-system's File class implements.
     const formData = new FormData();
-    formData.append("image", {
-      uri,
-      name: "invoice.jpg",
-      type: "image/jpeg",
-    } as any);
+    formData.append("image", new File(uri));
     try {
       const res = await fetch(
         `http://${API_HOST}:5010/api/taxes/${id}/transactions/scan`,
@@ -65,7 +64,11 @@ const InvoiceScan = () => {
       );
 
       if (!res.ok) {
-        throw new Error("Call failed to scan.");
+        // 400/422 are the controller's own handled responses (bad image type, unreadable
+        // receipt, GLM failure) — not exceptions, so they never show up as a backend error
+        // log. The body text is the only place that reason actually lives.
+        const body = await res.text();
+        throw new Error(`Call failed to scan (${res.status}): ${body}`);
       }
       // ScanTransaction already saves the transaction server-side (create, or
       // update a matched existing row) and returns the real persisted record —
@@ -133,20 +136,35 @@ const InvoiceScan = () => {
             title: t("gst.scanTitle"),
           }}
         />
-        <CameraView
-          style={styles.camera}
-          facing={"back"}
-          ref={ref}
-          mode={"picture"}
-        />
-        <View style={styles.buttonContainer}>
-          <Pressable onPress={takePicture} disabled={processing}>
-            {({ pressed }) => (
-              <View style={[styles.shutterBtn, { opacity: pressed ? 0.5 : 1 }]}>
-                <View style={styles.shutterBtnInner} />
-              </View>
-            )}
-          </Pressable>
+        <View style={styles.cameraBox}>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            facing={"back"}
+            ref={ref}
+            mode={"picture"}
+            autofocus="on"
+            animateShutter
+            zoom={0}
+            // expo-camera crops the live feed to fill styles.cameraBox's bounds by default, and
+            // those bounds don't match a captured photo's actual aspect ratio — so
+            // takePictureAsync() returns more of the scene than what was framed live. Giving
+            // styles.cameraBox the same 4:3 aspectRatio as the capture removes that mismatch on
+            // both platforms, since a box already shaped like the photo needs no cropping to fill
+            // it. "ratio" is Android-only and just makes Android pick an actual 4:3 sensor mode to
+            // match, rather than stretching whatever its default capture size is into that box.
+            ratio="4:3"
+          />
+          <View style={styles.buttonContainer}>
+            <Pressable onPress={takePicture} disabled={processing}>
+              {({ pressed }) => (
+                <View
+                  style={[styles.shutterBtn, { opacity: pressed ? 0.5 : 1 }]}
+                >
+                  <View style={styles.shutterBtnInner} />
+                </View>
+              )}
+            </Pressable>
+          </View>
         </View>
       </ThemedView>
     );
@@ -162,6 +180,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+    alignItems: "center",
   },
   container2: {
     flex: 1,
@@ -182,7 +201,13 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
     gap: Spacing.three,
   },
-  previewImage: { width: "100%", flex: 1, borderRadius: Spacing.three },
+  // Matches styles.camera's aspect ratio below, so the full (uncropped) captured photo
+  // fills this box exactly instead of being letterboxed or cropped to a different shape.
+  previewImage: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+    borderRadius: Spacing.three,
+  },
   previewActions: {
     flexDirection: "row",
     gap: Spacing.three,
@@ -190,14 +215,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
   },
   previewAction: { flex: 1 },
-  camera: {
-    flex: 1,
+  // 3:4 (portrait) matches the ratio="4:3" capture requested on CameraView below — this is
+  // the width/height ratio that makes the live preview and the captured photo the same shape.
+  // The shutter button overlays this box directly (not the full screen), so it stays anchored
+  // to the live feed's own edge rather than floating over the letterboxed area beneath it.
+  cameraBox: {
+    width: "100%",
+    aspectRatio: 3 / 4,
   },
   // Camera chrome stays white-on-feed regardless of theme — it sits over the live
   // preview, not over the app's background.
   buttonContainer: {
     position: "absolute",
-    bottom: 64,
+    bottom: 24,
     flexDirection: "row",
     backgroundColor: "transparent",
     width: "100%",

@@ -96,7 +96,7 @@ public class TransactionsService(AppDbContext db, TransactionAgent agent)
         return true;
     }
 
-    public async Task<bool> UpdateAmountAsync(int id, int jwtUserId, double amount)
+    public async Task<bool> UpdateAmountAsync(int id, int jwtUserId, double? amount)
     {
         var transaction = await db.Transactions.FindAsync(id);
         if (transaction is null) return false;
@@ -107,7 +107,7 @@ public class TransactionsService(AppDbContext db, TransactionAgent agent)
         return true;
     }
 
-    public async Task<bool> UpdateGstAsync(int id, int jwtUserId, double gst)
+    public async Task<bool> UpdateGstAsync(int id, int jwtUserId, double? gst)
     {
         var transaction = await db.Transactions.FindAsync(id);
         if (transaction is null) return false;

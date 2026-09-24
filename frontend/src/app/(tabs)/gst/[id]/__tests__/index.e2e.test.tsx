@@ -39,7 +39,7 @@ describe("GstReportEditorPage (e2e)", () => {
     });
 
     const post = calls.find((c) => c.method === "POST" && c.url.includes("/transactions"))!;
-    expect(post.body).toEqual({ taxId: 3, name: "", amount: 0, gst: 0, type: 0 });
+    expect(post.body).toEqual({ taxId: 3, name: "", amount: null, gst: null, type: 0 });
   });
 
   it("PATCHes an edited amount after the debounce settles", async () => {
@@ -73,6 +73,38 @@ describe("GstReportEditorPage (e2e)", () => {
     const patch = calls.find((c) => c.method === "PATCH")!;
     expect(patch.url).toContain("/api/transactions/10/update/amount");
     expect(patch.url).toContain("amount=150");
+  });
+
+  it("clears the amount instead of reverting to 0 when the cell is emptied", async () => {
+    jest.useFakeTimers();
+    const { calls } = mockFetchRoutes([
+      { method: "GET", match: "/api/taxes/3", body: { id: 3, startDate: "2026-01-01", endDate: "2026-03-31" } },
+      {
+        method: "GET",
+        match: "/api/taxes/3/transactions",
+        body: [{ id: 10, taxId: 3, name: "Bunnings", amount: 100, gst: 10, type: 0 }],
+      },
+      { method: "PATCH", match: "/update/amount", status: 204, body: {} },
+    ]);
+
+    await render(<GstReportEditorPage />);
+    await waitFor(() => expect(screen.getByDisplayValue("100")).toBeTruthy());
+
+    await fireEvent.changeText(screen.getByDisplayValue("100"), "");
+
+    jest.advanceTimersByTime(600);
+    jest.useRealTimers();
+
+    await waitFor(() => {
+      const patch = calls.find((c) => c.method === "PATCH");
+      expect(patch).toBeTruthy();
+    });
+
+    // No `amount` query param at all — the backend treats that as clearing the value,
+    // not as amount=0.
+    const patch = calls.find((c) => c.method === "PATCH")!;
+    expect(patch.url).toContain("/api/transactions/10/update/amount");
+    expect(patch.url).not.toContain("amount=");
   });
 
   it("deletes a transaction via DELETE when confirmed", async () => {

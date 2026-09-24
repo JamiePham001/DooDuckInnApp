@@ -114,12 +114,12 @@ file class TransactionTable(string title, IReadOnlyList<Transaction> rows) : ICo
                 foreach (var row in rows)
                 {
                     table.Cell().Element(BodyCellStyle).Text(row.Name);
-                    table.Cell().Element(BodyCellStyle).AlignRight().Text(row.Amount.ToString("N2"));
-                    table.Cell().Element(BodyCellStyle).AlignRight().Text(row.Gst.ToString("N2"));
+                    table.Cell().Element(BodyCellStyle).AlignRight().Text((row.Amount ?? 0).ToString("N2"));
+                    table.Cell().Element(BodyCellStyle).AlignRight().Text((row.Gst ?? 0).ToString("N2"));
                 }
 
-                var totalAmount = rows.Sum(r => r.Amount);
-                var totalGst = rows.Sum(r => r.Gst);
+                var totalAmount = rows.Sum(r => r.Amount ?? 0);
+                var totalGst = rows.Sum(r => r.Gst ?? 0);
 
                 table.Cell().Element(TotalCellStyle).Text("Total");
                 table.Cell().Element(TotalCellStyle).AlignRight().Text(totalAmount.ToString("N2"));

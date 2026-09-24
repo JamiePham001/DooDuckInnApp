@@ -14,7 +14,7 @@ public class TransactionsControllerTests(CustomWebApplicationFactory factory)
     }
 
     private static async Task<TransactionDto> CreateTransactionAsync(
-        HttpClient client, string name = "Stock", double amount = 100.00, double gst = 10.00, int type = 0)
+        HttpClient client, string name = "Stock", double? amount = 100.00, double? gst = 10.00, int type = 0)
     {
         var taxResponse = await client.PostAsJsonAsync("/api/users/me/taxes",
             new { dateStart = "2026-07-01", dateEnd = "2026-09-30" });
@@ -89,6 +89,66 @@ public class TransactionsControllerTests(CustomWebApplicationFactory factory)
             JsonContent.Create(new { name = "Bad", amount = -5.00, gst = 0.00, type = 0 }));
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTransaction_AllowsNullAmountAndGst()
+    {
+        var client = await NewUserClientAsync("txn-sub-11");
+
+        var transaction = await CreateTransactionAsync(client, amount: null, gst: null);
+
+        Assert.Null(transaction.Amount);
+        Assert.Null(transaction.Gst);
+    }
+
+    [Fact]
+    public async Task UpdateInstance_AllowsNullAmountAndGst()
+    {
+        var client = await NewUserClientAsync("txn-sub-12");
+        var transaction = await CreateTransactionAsync(client);
+
+        var response = await client.PatchAsync($"/api/transactions/{transaction.Id}/update",
+            JsonContent.Create(new { name = "Cleared", amount = (double?)null, gst = (double?)null, type = 0 }));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var updated = await (await client.GetAsync($"/api/transactions/{transaction.Id}"))
+            .Content.ReadFromJsonAsync<TransactionDto>();
+        Assert.Null(updated!.Amount);
+        Assert.Null(updated.Gst);
+    }
+
+    [Fact]
+    public async Task UpdateAmount_ReturnsNoContent_AndClearsValue_WhenOmitted()
+    {
+        var client = await NewUserClientAsync("txn-sub-13");
+        var transaction = await CreateTransactionAsync(client);
+
+        // No `amount` query param at all — this is what the frontend now sends while the
+        // user has cleared the cell, rather than coercing the blank input back to 0.
+        var response = await client.PatchAsync($"/api/transactions/{transaction.Id}/update/amount", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var updated = await (await client.GetAsync($"/api/transactions/{transaction.Id}"))
+            .Content.ReadFromJsonAsync<TransactionDto>();
+        Assert.Null(updated!.Amount);
+    }
+
+    [Fact]
+    public async Task UpdateGst_ReturnsNoContent_AndClearsValue_WhenOmitted()
+    {
+        var client = await NewUserClientAsync("txn-sub-14");
+        var transaction = await CreateTransactionAsync(client);
+
+        var response = await client.PatchAsync($"/api/transactions/{transaction.Id}/update/gst", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var updated = await (await client.GetAsync($"/api/transactions/{transaction.Id}"))
+            .Content.ReadFromJsonAsync<TransactionDto>();
+        Assert.Null(updated!.Gst);
     }
 
     [Fact]

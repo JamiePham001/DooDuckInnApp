@@ -30,11 +30,15 @@ public class TransactionAgent(AnthropicClient client)
 
         var candidates = string.Join("\n", transactions.Select(t => $"- id {t.Id}: {t.Name}"));
 
-        var text = await CallAsync(schema, $"""
-        Compare "{scannedName}" against this list of existing GST transaction names:
-        {candidates}
+        // Same reinforcement as ExtractFromImageAsync's prompt below — GLM (via Z.ai) doesn't
+        // reliably honor the JSON-schema OutputConfig alone, even for a plain text prompt.
+        var text = await CallAsync(schema, $$"""
+        Compare "{{scannedName}}" against this list of existing GST transaction names:
+        {{candidates}}
         If any of them is a close match or carries a strong resemblance in meaning, return the
         corresponding id of that matched entry. Return -1 if there is no match.
+        Respond with ONLY a raw JSON object — no markdown, no headings, no explanation — in
+        exactly this shape: {"id": number}.
         """);
 
         return ParseIntFromJson(text);
@@ -51,11 +55,16 @@ public class TransactionAgent(AnthropicClient client)
             type = new { type = "string", @enum = new[] { "Sale", "Purchase" } },
         }, required: ["name", "amount", "gst", "type"]);
 
+        // The trailing "Respond with ONLY..." line is load-bearing, not decorative — confirmed via
+        // a live test that GLM (via Z.ai) doesn't reliably honor the JSON-schema OutputConfig alone
+        // for vision requests; it sometimes answers in markdown prose instead. Repeating the exact
+        // shape in-prompt is what makes it actually return JSON.
         var text = await CallAsync(schema, imageBytes, mediaType,
             "Extract the transaction from this receipt/invoice image for a GST report: the merchant/item name, " +
             "the total amount charged, the GST amount charged (GST not found, set to 0), and whether it is a Sale (customer paid the shop) " +
             "or a Purchase (the shop paid a supplier). If this image is not a readable receipt " +
-            "or invoice, respond with amount 0 and gst 0.");
+            "or invoice, respond with amount 0 and gst 0. Respond with ONLY a raw JSON object — no markdown, " +
+            """no headings, no explanation — in exactly this shape: {"name": string, "amount": number, "gst": number, "type": "Sale" | "Purchase"}.""");
 
         return ParseExtractionFromJson(text);
     }
@@ -77,7 +86,7 @@ public class TransactionAgent(AnthropicClient client)
                 // 200 wasn't enough — a live test against GLM hit max_tokens with zero visible
                 // output at that cap, even for a trivial prompt (reasoning overhead eating the
                 // budget before any answer text). 1000 is the smallest value confirmed to work.
-                MaxTokens = 1000,
+                MaxTokens = 4096,
                 OutputConfig = new OutputConfig { Format = new JsonOutputFormat { Schema = schema } },
                 Messages = [new() { Role = Role.User, Content = new MessageParamContent(textPrompt, null) }],
             });
@@ -97,7 +106,12 @@ public class TransactionAgent(AnthropicClient client)
             var response = await client.Messages.Create(new MessageCreateParams
             {
                 Model = ModelName,
-                MaxTokens = 1024,
+                // Confirmed via a live test against GLM: vision + JSON-schema output burns through
+                // far more reasoning tokens than the text-only call above does — 1024 was hit with
+                // zero TextBlocks in the response (all budget spent on the "thinking" block), which
+                // ExtractText then reports as "Claude returned no usable output." 4096 is the
+                // smallest value confirmed to leave room for the actual answer.
+                MaxTokens = 4096,
                 OutputConfig = new OutputConfig { Format = new JsonOutputFormat { Schema = schema } },
                 Messages =
                 [
@@ -134,8 +148,40 @@ public class TransactionAgent(AnthropicClient client)
         if (response.StopReason == "refusal")
             throw new TransactionAgentException("Claude declined to process this request.");
 
-        return response.Content.Select(b => b.Value).OfType<TextBlock>().FirstOrDefault()?.Text
+        var text = response.Content.Select(b => b.Value).OfType<TextBlock>().FirstOrDefault()?.Text
             ?? throw new TransactionAgentException("Claude returned no usable output.");
+
+        return ExtractJsonObject(text);
+    }
+
+    // GLM via Z.ai doesn't reliably honor the JSON-schema output constraint — confirmed via a
+    // live test, it sometimes wraps the requested JSON in markdown prose (e.g. a "**Extracted
+    // Transaction:**" heading) instead of returning it bare. Scanning out the first balanced
+    // {...} object, rather than trusting the whole response to already be valid JSON, is what
+    // makes the parse robust to that regardless of what surrounds it.
+    private static string ExtractJsonObject(string text)
+    {
+        var start = text.IndexOf('{');
+        if (start == -1) return text; // no object found — let JsonDocument.Parse report the real error
+
+        var depth = 0;
+        var inString = false;
+        var escaped = false;
+        for (var i = start; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (inString)
+            {
+                if (escaped) escaped = false;
+                else if (c == '\\') escaped = true;
+                else if (c == '"') inString = false;
+                continue;
+            }
+            if (c == '"') inString = true;
+            else if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) return text[start..(i + 1)];
+        }
+        return text[start..]; // unterminated — let JsonDocument.Parse report the real error
     }
 
     // public + static: no network call, directly unit-testable, no InternalsVisibleTo needed.

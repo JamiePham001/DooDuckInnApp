@@ -56,7 +56,7 @@ public class ItemsService(AppDbContext db)
         return true;
     }
 
-    public async Task<bool> UpdateQtyAsync(int id, int jwtUserId, int qty)
+    public async Task<bool> UpdateQtyAsync(int id, int jwtUserId, int? qty)
     {
         var item = await db.Items.FindAsync(id);
         if (item is null) return false;

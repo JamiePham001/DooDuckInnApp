@@ -23,8 +23,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .IsRequired();
 
         builder
-            .Property(t => t.Amount)
-            .HasDefaultValue(0.00);
+            .Property(t => t.Amount);
 
         builder
             .Property(t => t.Gst);

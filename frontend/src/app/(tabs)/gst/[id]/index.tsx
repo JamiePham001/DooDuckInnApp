@@ -33,8 +33,8 @@ interface ITransactionRes {
   id: number;
   taxId: number;
   name: string;
-  amount: number;
-  gst: number;
+  amount: number | null;
+  gst: number | null;
   type: number;
 }
 

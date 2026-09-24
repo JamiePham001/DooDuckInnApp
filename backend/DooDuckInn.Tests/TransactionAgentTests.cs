@@ -23,6 +23,30 @@ public class TransactionAgentTests
     }
 
     [Fact]
+    public async Task ExtractFromImageAsync_ReturnsExtractedFields_WhenJsonIsWrappedInMarkdownProse()
+    {
+        // GLM (via Z.ai) doesn't reliably honor the JSON-schema output constraint for vision
+        // requests — confirmed via a live test, it can wrap the JSON in a markdown explanation
+        // instead of returning it bare.
+        var responseText = """
+            **Extracted Transaction:**
+
+            | Field | Value |
+            |---|---|
+            {"name":"Bunnings Warehouse","amount":220.0,"gst":20.0,"type":"Purchase"}
+
+            This is a Purchase.
+            """;
+        var client = FakeAnthropicHttpHandler.BuildClient(FakeAnthropicHttpHandler.BuildMessageResponse(responseText));
+        var agent = new TransactionAgent(client);
+
+        var result = await agent.ExtractFromImageAsync([1, 2, 3], "image/jpeg");
+
+        Assert.Equal("Bunnings Warehouse", result.Name);
+        Assert.Equal(220.0, result.Amount);
+    }
+
+    [Fact]
     public async Task ExtractFromImageAsync_Throws_WhenClaudeRefuses()
     {
         var client = FakeAnthropicHttpHandler.BuildClient(
@@ -72,6 +96,27 @@ public class TransactionAgentTests
     {
         var client = FakeAnthropicHttpHandler.BuildClient(
             FakeAnthropicHttpHandler.BuildMessageResponse("""{"id":5}"""));
+        var agent = new TransactionAgent(client);
+
+        var result = await agent.CheckExistsAsync("Western Power",
+            [new Transaction(1, "Electrical Bill", 100, 10, TransactionType.Purchase)]);
+
+        Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public async Task CheckExistsAsync_ReturnsMatchedId_WhenJsonIsWrappedInMarkdownProse()
+    {
+        // Same GLM/Z.ai quirk as the image-extraction path — confirmed via a live test that
+        // it can wrap the JSON answer in markdown prose here too.
+        var responseText = """
+            Based on the comparison, the closest match is:
+
+            {"id":5}
+
+            This is a strong match.
+            """;
+        var client = FakeAnthropicHttpHandler.BuildClient(FakeAnthropicHttpHandler.BuildMessageResponse(responseText));
         var agent = new TransactionAgent(client);
 
         var result = await agent.CheckExistsAsync("Western Power",
