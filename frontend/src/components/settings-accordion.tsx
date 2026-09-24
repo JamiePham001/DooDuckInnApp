@@ -1,5 +1,12 @@
-import React, { type ComponentProps } from "react";
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import React, { useState, type ComponentProps } from "react";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -13,10 +20,14 @@ import {
   Motion,
   Spacing,
   Typography,
+  Radius,
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { LOCALES, type Locale } from "@/i18n";
+import { ThemedText } from "./themed-text";
+import { Dropdown } from "react-native-element-dropdown";
+import { Button } from "./ui/button";
 
 type Props = {
   visible: boolean;
@@ -62,6 +73,8 @@ function SettingsRow({
 export function SettingsAccordion({ visible, onClose }: Props) {
   const colors = useTheme();
   const { t, locale, setLocale } = useI18n();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isFocus, setIsFocus] = useState(false);
 
   const style = useAnimatedStyle(() => ({
     // Content is a couple of fixed-height rows — a real max-content height, not "100%"
@@ -73,21 +86,13 @@ export function SettingsAccordion({ visible, onClose }: Props) {
 
   const { signOut } = useAuthenticator();
 
-  // A native Alert with one button per language is enough for a 2-item picker —
-  // no reason to build a custom modal for this. Names are shown in each language's
-  // own script (e.g. "Tiếng Việt"), not translated, matching every OS's own picker.
-  const chooseLanguage = () => {
-    onClose();
-    Alert.alert(t("settings.chooseLanguage"), undefined, [
-      ...(Object.entries(LOCALES) as [Locale, string][]).map(
-        ([code, name]) => ({
-          text: code === locale ? `✓ ${name}` : name,
-          onPress: () => setLocale(code),
-        }),
-      ),
-      { text: t("common.cancel"), style: "cancel" as const },
-    ]);
-  };
+  const dropdownStyle = (focused: boolean) => [
+    styles.dropdown,
+    {
+      backgroundColor: colors.surface,
+      borderColor: focused ? colors.accent : colors.border,
+    },
+  ];
 
   return (
     <Animated.View
@@ -105,7 +110,10 @@ export function SettingsAccordion({ visible, onClose }: Props) {
         icon="language-outline"
         filledIcon="language"
         label={t("settings.language")}
-        onPress={chooseLanguage}
+        onPress={() => {
+          onClose();
+          setModalVisible(true);
+        }}
       />
       <SettingsRow
         icon="log-out-outline"
@@ -113,6 +121,61 @@ export function SettingsAccordion({ visible, onClose }: Props) {
         label={t("settings.logOut")}
         onPress={signOut}
       />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <TouchableWithoutFeedback
+          onPressOut={() => setModalVisible(!modalVisible)}
+        >
+          <View style={styles.centeredView}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalView}>
+                <ThemedText style={[styles.modalHeading]}>Languages</ThemedText>
+
+                <Dropdown
+                  style={dropdownStyle(isFocus)}
+                  containerStyle={{
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: Radius.md,
+                  }}
+                  placeholderStyle={{
+                    ...Typography.body,
+                    color: colors.textSecondary,
+                  }}
+                  selectedTextStyle={{ ...Typography.body, color: colors.text }}
+                  itemTextStyle={{ ...Typography.body, color: colors.text }}
+                  activeColor={colors.accentSoft}
+                  data={(Object.entries(LOCALES) as [Locale, string][]).map(
+                    ([code, name]) => ({ label: name, value: code }),
+                  )}
+                  labelField="label"
+                  valueField="value"
+                  maxHeight={300}
+                  value={locale}
+                  placeholder={!isFocus ? t("settings.chooseLanguage") : "..."}
+                  onFocus={() => setIsFocus(true)}
+                  onBlur={() => setIsFocus(false)}
+                  onChange={(item) => {
+                    setLocale(item.value);
+                    setIsFocus(false);
+                  }}
+                />
+                <Button
+                  title="Ok"
+                  onPress={() => setModalVisible(false)}
+                  style={styles.modalButton}
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </Animated.View>
   );
 }
@@ -134,4 +197,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
   },
   text: Typography.body,
+  dropdown: {
+    width: "100%",
+    minHeight: 52,
+    marginBottom: Spacing.three,
+    borderWidth: Hairline,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
+  },
+
+  // modal
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    width: "85%",
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "stretch",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalButton: { alignSelf: "stretch" },
+  modalHeading: {
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 25,
+    overflowY: "auto",
+    paddingBottom: 30,
+  },
 });

@@ -89,6 +89,9 @@ describe("GstReportEditorPage (e2e)", () => {
     await render(<GstReportEditorPage />);
     await waitFor(() => expect(screen.getByDisplayValue("Bunnings")).toBeTruthy());
 
+    // SwipeToDelete owns its own confirmation modal internally (see
+    // swipe-to-delete.test.tsx) — it's mocked out here to a plain long-press
+    // that fires onDelete directly, so this only exercises GstTable's wiring.
     await fireEvent(screen.getByTestId("mock-swipe-delete"), "longPress");
 
     await waitFor(() => {
@@ -96,5 +99,57 @@ describe("GstReportEditorPage (e2e)", () => {
       expect(del).toBeTruthy();
     });
     expect(calls.find((c) => c.method === "DELETE")!.url).toContain("/api/transactions/10");
+  });
+
+  it("only POSTs the send-report request once the confirmation modal is accepted", async () => {
+    const { calls } = mockFetchRoutes([
+      { method: "GET", match: "/api/taxes/3", body: { id: 3, startDate: "2026-01-01", endDate: "2026-03-31" } },
+      { method: "GET", match: "/api/taxes/3/transactions", body: [] },
+      { method: "POST", match: "/send-report", status: 204, body: {} },
+    ]);
+
+    await render(<GstReportEditorPage />);
+    await waitFor(() => expect(screen.getAllByText("Add row")).toHaveLength(2));
+
+    await fireEvent.press(screen.getByText("Send"));
+
+    // Pressing "Send" only opens the confirmation modal — nothing sent yet.
+    const confirmText = await screen.findByText(
+      "Are you sure you want to email this report?",
+    );
+    expect(confirmText).toBeTruthy();
+    expect(calls.find((c) => c.method === "POST")).toBeUndefined();
+
+    await fireEvent.press(screen.getByText("I'm sure"));
+
+    await waitFor(() => {
+      const post = calls.find((c) => c.method === "POST");
+      expect(post).toBeTruthy();
+    });
+    expect(calls.find((c) => c.method === "POST")!.url).toContain(
+      "/api/taxes/3/send-report",
+    );
+  });
+
+  it("does not send the report when the confirmation modal is cancelled", async () => {
+    const { calls } = mockFetchRoutes([
+      { method: "GET", match: "/api/taxes/3", body: { id: 3, startDate: "2026-01-01", endDate: "2026-03-31" } },
+      { method: "GET", match: "/api/taxes/3/transactions", body: [] },
+    ]);
+
+    await render(<GstReportEditorPage />);
+    await waitFor(() => expect(screen.getAllByText("Add row")).toHaveLength(2));
+
+    await fireEvent.press(screen.getByText("Send"));
+    await screen.findByText("Are you sure you want to email this report?");
+
+    await fireEvent.press(screen.getByText("Cancel"));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Are you sure you want to email this report?"),
+      ).toBeNull(),
+    );
+    expect(calls.find((c) => c.method === "POST")).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
-import React from "react";
-import { TextInput, Platform, View } from "react-native";
+import React, { Dispatch } from "react";
+import { TextInput, View } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 import { StyleSheet } from "react-native";
@@ -80,7 +80,11 @@ function PulsingRow({
 
   return (
     <Animated.View
-      style={[styles.tableRow, { borderTopColor: colors.border }, animatedStyle]}
+      style={[
+        styles.tableRow,
+        { borderTopColor: colors.border },
+        animatedStyle,
+      ]}
     >
       {children}
     </Animated.View>
@@ -142,9 +146,13 @@ function DebouncedNameInput({
 function DebouncedAmountInput({
   initialAmount,
   onSave,
+  amountId,
+  setArray,
 }: {
   initialAmount: number;
   onSave: (amount: number) => Promise<Response>;
+  amountId: number;
+  setArray: Dispatch<React.SetStateAction<ITransactionRes[]>>;
 }) {
   const colors = useTheme();
   const style = useCellStyle(1);
@@ -156,6 +164,11 @@ function DebouncedAmountInput({
   function handleChange(value: string) {
     const previousValue = text;
     setText(value); // updates instantly — the input never feels laggy
+    setArray((prev) =>
+      prev.map((obj) =>
+        obj.id === amountId ? { ...obj, amount: +value } : obj,
+      ),
+    );
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
@@ -168,6 +181,11 @@ function DebouncedAmountInput({
         }
       } catch {
         setText(previousValue);
+        setArray((prev) =>
+          prev.map((obj) =>
+            obj.id === amountId ? { ...obj, amount: +previousValue } : obj,
+          ),
+        );
       }
     }, 600);
   }
@@ -240,6 +258,7 @@ const GstTable = ({
   const { t } = useI18n();
   const [tableArray, setTableArray] = useState(array);
   const [creating, setCreating] = useState(false);
+
   useEffect(() => {
     setTableArray(array);
   }, [array]);
@@ -295,14 +314,12 @@ const GstTable = ({
     }
   };
 
-  const total = tableArray.reduce((sum, t) => sum + (t.amount || 0), 0);
-
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.sectionTotal}>
-          ${total.toFixed(2)}
+          ${tableArray.reduce((sum, t) => sum + (t.amount || 0), 0).toFixed(2)}
         </ThemedText>
       </View>
 
@@ -354,6 +371,8 @@ const GstTable = ({
               />
               <DebouncedAmountInput
                 initialAmount={transaction.amount}
+                amountId={transaction.id}
+                setArray={setTableArray}
                 onSave={(amount) =>
                   fetch(
                     `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount?amount=${encodeURIComponent(amount)}`,
@@ -383,7 +402,10 @@ const GstTable = ({
         <PressableScale
           style={[
             styles.addRow,
-            { backgroundColor: colors.accentSoft, borderTopColor: colors.border },
+            {
+              backgroundColor: colors.accentSoft,
+              borderTopColor: colors.border,
+            },
           ]}
           onPress={addRow}
           disabled={creating}

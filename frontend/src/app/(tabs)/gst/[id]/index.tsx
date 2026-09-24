@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import {
   Stack,
   useFocusEffect,
@@ -60,6 +69,8 @@ export default function GstReportEditorPage() {
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsError, setTransactionsError] = useState(false);
   const [highlightId, setHighlightId] = useState<number | null>(null);
+
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (!jwtToken || !taxId) return;
@@ -142,6 +153,7 @@ export default function GstReportEditorPage() {
   const sendReport = async () => {
     try {
       setSending(true);
+      setModalVisible(!modalVisible);
       const res = await fetch(
         `http://${API_HOST}:5010/api/taxes/${taxId}/send-report`,
         {
@@ -217,11 +229,57 @@ export default function GstReportEditorPage() {
           <Button
             title={t("gst.sendButton")}
             icon="paper-plane-outline"
-            onPress={sendReport}
+            onPress={() => setModalVisible(true)}
             loading={sending}
+            disabled={sending}
             style={styles.action}
           />
         </View>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <TouchableWithoutFeedback
+            onPressOut={() => setModalVisible(!modalVisible)}
+          >
+            <View style={styles.centeredView}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalView}>
+                  <ThemedText style={[styles.modalHeading]}>
+                    {t("gst.sendReportTitle")}
+                  </ThemedText>
+                  <ThemedText style={styles.modalText}>
+                    {t("gst.sendReportConfirm")}
+                  </ThemedText>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      width: "100%",
+                    }}
+                  >
+                    <Button
+                      title={t("common.cancel")}
+                      onPress={() => setModalVisible(!modalVisible)}
+                      style={{ backgroundColor: colors.critical }}
+                    />
+                    <Button
+                      title={t("gst.sendReportConfirmButton")}
+                      onPress={sendReport}
+                      disabled={sending}
+                      style={{ backgroundColor: colors.medium }}
+                    />
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
         <GstTable
           title={t("gst.soldTable")}
@@ -267,4 +325,50 @@ const styles = StyleSheet.create({
   },
   messageTitle: { ...Typography.title, textAlign: "center" },
   messageBody: { ...Typography.secondary, textAlign: "center" },
+
+  // modal
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalHeading: {
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 25,
+    overflowY: "auto",
+    height: 30,
+  },
 });

@@ -1,11 +1,19 @@
-import React, { useRef, type ReactNode } from "react";
-import { Alert, Animated, PanResponder, StyleSheet } from "react-native";
+import React, { useRef, useState, type ReactNode } from "react";
+import {
+  Animated,
+  Modal,
+  PanResponder,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
-import { Spacing, Typography } from "@/constants/theme";
+import { Radius, Shadow, Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   children: ReactNode;
@@ -27,6 +35,7 @@ export function SwipeToDelete({
   const { t } = useI18n();
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
   // Ties the action panel's visibility to how far it's actually been swiped open,
   // rather than leaving it permanently opaque behind the row. At rest (translateX 0)
@@ -44,15 +53,15 @@ export function SwipeToDelete({
     Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
   }
 
-  function confirmDelete() {
-    Alert.alert(
-      t("common.confirmDeleteTitle"),
-      confirmMessage ?? t("common.confirmDeleteBody"),
-      [
-        { text: t("common.cancel"), style: "cancel", onPress: resetPosition },
-        { text: t("common.delete"), style: "destructive", onPress: onDelete },
-      ],
-    );
+  function cancelDelete() {
+    setConfirmVisible(false);
+    resetPosition();
+  }
+
+  function confirmedDelete() {
+    setConfirmVisible(false);
+    resetPosition();
+    onDelete();
   }
 
   const panResponder = useRef(
@@ -81,7 +90,7 @@ export function SwipeToDelete({
           Animated.spring(translateX, {
             toValue: -DELETE_WIDTH,
             useNativeDriver: true,
-          }).start(() => confirmDelete());
+          }).start(() => setConfirmVisible(true));
         } else {
           resetPosition();
         }
@@ -109,6 +118,44 @@ export function SwipeToDelete({
       >
         {children}
       </Animated.View>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={confirmVisible}
+        onRequestClose={cancelDelete}
+      >
+        <TouchableWithoutFeedback onPressOut={cancelDelete}>
+          <View style={styles.centeredView}>
+            {/* Swallows the press so tapping the card itself doesn't bubble up
+                to the backdrop's onPressOut and dismiss the modal. */}
+            <TouchableWithoutFeedback>
+              <View
+                style={[styles.modalView, { backgroundColor: colors.surface }]}
+              >
+                <ThemedText style={styles.modalHeading}>
+                  {t("common.confirmDeleteTitle")}
+                </ThemedText>
+                <ThemedText style={styles.modalText}>
+                  {confirmMessage ?? t("common.confirmDeleteBody")}
+                </ThemedText>
+                <View style={styles.modalActions}>
+                  <Button
+                    title={t("common.cancel")}
+                    onPress={cancelDelete}
+                    style={{ backgroundColor: colors.textSecondary }}
+                  />
+                  <Button
+                    title={t("common.delete")}
+                    onPress={confirmedDelete}
+                    style={{ backgroundColor: colors.critical }}
+                  />
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </ThemedView>
   );
 }
@@ -127,5 +174,26 @@ const styles = StyleSheet.create({
   actionText: {
     ...Typography.caption,
     color: "#FFFFFF",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    margin: Spacing.four,
+    borderRadius: Radius.lg,
+    padding: Spacing.five,
+    alignItems: "center",
+    gap: Spacing.two,
+    ...Shadow.raised,
+  },
+  modalHeading: { ...Typography.title, textAlign: "center" },
+  modalText: { ...Typography.secondary, textAlign: "center" },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: Spacing.two,
   },
 });

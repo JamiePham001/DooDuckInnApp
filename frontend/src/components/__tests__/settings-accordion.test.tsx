@@ -1,5 +1,4 @@
 import React from "react";
-import { Alert } from "react-native";
 import { screen, fireEvent } from "@testing-library/react-native";
 import { useAuthenticator } from "@aws-amplify/ui-react-native";
 
@@ -10,6 +9,26 @@ jest.mock("@aws-amplify/ui-react-native", () => ({
   useAuthenticator: jest.fn(),
 }));
 
+// react-native-element-dropdown opens its option list in a Modal/portal that RNTL
+// doesn't traverse — swapped for a flat, always-visible list of pressable options
+// so this test exercises *our* onChange wiring, not the third-party library's own
+// open/close rendering.
+jest.mock("react-native-element-dropdown", () => {
+  const { View, Pressable, Text } = require("react-native");
+  return {
+    Dropdown: ({ data, labelField, onChange, placeholder }: any) => (
+      <View>
+        <Text>{placeholder}</Text>
+        {data.map((item: any) => (
+          <Pressable key={item[labelField]} onPress={() => onChange(item)}>
+            <Text>{item[labelField]}</Text>
+          </Pressable>
+        ))}
+      </View>
+    ),
+  };
+});
+
 const mockUseAuthenticator = useAuthenticator as jest.Mock;
 
 describe("SettingsAccordion", () => {
@@ -18,11 +37,6 @@ describe("SettingsAccordion", () => {
   beforeEach(() => {
     signOut.mockClear();
     mockUseAuthenticator.mockReturnValue({ signOut });
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("signs the user out when Log Out is pressed", async () => {
@@ -38,16 +52,8 @@ describe("SettingsAccordion", () => {
 
     await fireEvent.press(screen.getByText("Language"));
 
-    expect(Alert.alert).toHaveBeenCalledTimes(1);
-    const [title, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
-    expect(title).toBe("Choose a language");
-
-    const labels = buttons.map((b: { text: string }) => b.text);
-    // The current language is marked with a check, so the option label
-    // includes it rather than the bare name — checking `toContain` covers both.
-    expect(labels.some((l: string) => l.includes("English"))).toBe(true);
-    expect(labels.some((l: string) => l.includes("Tiếng Việt"))).toBe(true);
-    expect(labels).toContain("Cancel");
+    expect(screen.getByText("English")).toBeTruthy();
+    expect(screen.getByText("Tiếng Việt")).toBeTruthy();
   });
 
   it("closes the accordion as soon as the language picker opens", async () => {
@@ -63,10 +69,7 @@ describe("SettingsAccordion", () => {
     await render(<SettingsAccordion visible onClose={jest.fn()} />);
 
     await fireEvent.press(screen.getByText("Language"));
-    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
-    const vietnamese = buttons.find((b: { text: string }) => b.text.includes("Tiếng Việt"));
-
-    vietnamese.onPress();
+    await fireEvent.press(screen.getByText("Tiếng Việt"));
 
     // Confirmed via a re-render: switching language re-labels this very row.
     await screen.findByText("Ngôn ngữ");
