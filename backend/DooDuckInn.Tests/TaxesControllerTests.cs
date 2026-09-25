@@ -124,15 +124,18 @@ public class TaxesControllerTests(CustomWebApplicationFactory factory)
     }
 
     [Fact]
-    public async Task CreateTransaction_ReturnsBadRequest_WhenNameEmpty()
+    public async Task CreateTransaction_ReturnsCreated_WhenNameEmpty()
     {
+        // GstTable's "Add row" button creates a blank starter row through this exact endpoint
+        // (empty name, null amount/gst) for the user to fill in afterwards — this must keep
+        // succeeding, not reject the blank name.
         var client = await NewUserClientAsync("tax-sub-7");
         var tax = await CreateTaxAsync(client);
 
         var response = await client.PostAsJsonAsync($"/api/taxes/{tax.Id}/transactions",
-            new { taxId = tax.Id, name = "", amount = 10.00, gst = 1.00, type = 0 });
+            new { taxId = tax.Id, name = "", amount = (double?)null, gst = (double?)null, type = 0 });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
