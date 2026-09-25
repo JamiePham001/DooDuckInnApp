@@ -92,11 +92,12 @@ public class SuppliersController(
         {
             var me = await CurrentUserAsync();
             var supplierItems = await items.GetBySupplierId(id, me.Id);
+            var filteredItems = supplierItems.FindAll(i => i.Quantity > 0);
 
             await email.SendAsync(request.RecipientEmail,
                 "Doo Duck Inn — Delivery Order",
-                OrderEmail.BuildText(request.date, supplierItems),
-                htmlBody: OrderEmail.BuildHtml(request.date, supplierItems));
+                OrderEmail.BuildText(request.date, filteredItems),
+                htmlBody: OrderEmail.BuildHtml(request.date, filteredItems));
 
             return NoContent();
         }

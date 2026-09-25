@@ -45,7 +45,6 @@ interface IItem {
   quantity: number;
 }
 
-
 const fetchSupplier = async (
   supplierId: number,
   jwtToken: string,
@@ -125,7 +124,7 @@ function DebouncedItemQtyInput({
   const colors = useTheme();
   // Kept as a raw string, not a number — coercing on every keystroke drops
   // characters a user is still mid-typing (e.g. a leading "0").
-  const [text, setText] = useState(initialQty.toString());
+  const [text, setText] = useState(initialQty?.toString() ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleChange(value: string) {
@@ -151,6 +150,7 @@ function DebouncedItemQtyInput({
       value={text}
       onChangeText={handleChange}
       keyboardType="number-pad"
+      placeholder="0"
       placeholderTextColor={colors.textSecondary}
       style={{
         flex: 1,
@@ -283,7 +283,9 @@ export default function VendorDetailPage() {
           {!!supplier.phone && (
             <PressableScale onPress={callVendor} style={styles.contactRow}>
               <Ionicons name="call-outline" size={18} color={colors.accent} />
-              <ThemedText style={[styles.contactText, { color: colors.accent }]}>
+              <ThemedText
+                style={[styles.contactText, { color: colors.accent }]}
+              >
                 {supplier.phone}
               </ThemedText>
             </PressableScale>
