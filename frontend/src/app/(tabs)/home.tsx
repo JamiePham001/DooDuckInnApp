@@ -1,5 +1,11 @@
-import React, { useEffect } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Animated, {
@@ -61,10 +67,6 @@ interface IDigestItem {
   receivedAt: string;
 }
 
-// ponytail: "localhost" means the device itself on Android, not the host machine —
-// the Android emulator maps the host's localhost to 10.0.2.2 instead. Swap for a real
-// LAN IP (or an env-based config) once testing on a physical device.
-
 const fetchDigest = async (jwtToken: string): Promise<IDigestItem[]> => {
   const res = await fetch(`http://${API_HOST}:5010/api/digests/latest`, {
     headers: { Authorization: `Bearer ${jwtToken}` },
@@ -77,6 +79,7 @@ function DigestCard({ item, index }: { item: IDigestItem; index: number }) {
   const colors = useTheme();
   const { t } = useI18n();
   const priorityColor = colors[PRIORITY_COLOR[item.priority]];
+  const [toggleHeight, setToggleHeight] = useState(3);
 
   return (
     <Animated.View
@@ -84,34 +87,44 @@ function DigestCard({ item, index }: { item: IDigestItem; index: number }) {
       entering={FadeInDown.duration(Motion.base).delay(
         Math.min(index, 6) * Motion.stagger,
       )}
-      style={[
-        styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
     >
-      <View style={styles.cardHeader}>
-        <ThemedText style={styles.sender} numberOfLines={1}>
-          {item.senderName}
-        </ThemedText>
-        <View
-          style={[styles.pill, { backgroundColor: priorityColor + "1A" }]}
-        >
-          <ThemedText style={[styles.pillText, { color: priorityColor }]}>
-            {t(PRIORITY_KEY[item.priority])}
-          </ThemedText>
-        </View>
-      </View>
-
-      <ThemedText style={styles.subject} numberOfLines={1}>
-        {item.subject}
-      </ThemedText>
-      <ThemedText
-        themeColor="textSecondary"
-        style={styles.summary}
-        numberOfLines={3}
+      <Pressable
+        onPress={() => setToggleHeight(toggleHeight === 3 ? 6 : 3)}
+        style={({ pressed }) => [
+          {
+            backgroundColor: pressed ? colors.surfacePressed : colors.surface,
+            flex: 1,
+          },
+          styles.card,
+          {
+            borderColor: colors.border,
+          },
+        ]}
       >
-        {item.summary}
-      </ThemedText>
+        <View style={styles.cardHeader}>
+          <ThemedText style={styles.sender} numberOfLines={1}>
+            {item.senderName}
+          </ThemedText>
+          <View
+            style={[styles.pill, { backgroundColor: priorityColor + "1A" }]}
+          >
+            <ThemedText style={[styles.pillText, { color: priorityColor }]}>
+              {t(PRIORITY_KEY[item.priority])}
+            </ThemedText>
+          </View>
+        </View>
+
+        <ThemedText style={styles.subject} numberOfLines={1}>
+          {item.subject}
+        </ThemedText>
+        <ThemedText
+          themeColor="textSecondary"
+          style={styles.summary}
+          numberOfLines={toggleHeight}
+        >
+          {item.summary}
+        </ThemedText>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -307,7 +320,7 @@ const styles = StyleSheet.create({
   },
   sender: { ...Typography.bodyStrong, flexShrink: 1 },
   subject: Typography.body,
-  summary: Typography.secondary,
+  summary: { ...Typography.secondary },
 
   // A tinted pill rather than bare coloured text: it reads as a status at a glance, and
   // putting the colour on its own background sidesteps small-text contrast problems.
