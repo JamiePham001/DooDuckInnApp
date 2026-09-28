@@ -38,6 +38,7 @@ ScaffoldingReadMe.txt
 
 # dotenv environment variables file
 .env
+aws-lambda-tools-defaults.json
 
 # Others
 ~$*

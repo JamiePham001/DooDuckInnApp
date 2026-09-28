@@ -17,6 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.RestApi);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -72,7 +74,6 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<DigestsService>();
 builder.Services.AddScoped<DigestAgent>();
 builder.Services.AddScoped<GmailClient>();
-builder.Services.AddHostedService<DailyDigestBackgroundService>();
 
 var app = builder.Build();
 

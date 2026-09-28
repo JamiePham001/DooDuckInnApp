@@ -1,0 +1,60 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "DooDuckInn daily digest scan — a Lambda invoked directly by EventBridge Scheduler (not through API Gateway). Reads its config from the SSM parameters created by the DooDuckInn API stack's serverless.template — deploy that stack first.",
+
+  "Parameters": {
+    "DigestScheduleExpression": {
+      "Type": "String",
+      "Default": "cron(0 12 * * ? *)",
+      "Description": "EventBridge Scheduler cron expression for the daily digest run (time is interpreted in DigestScheduleTimezone, not UTC)."
+    },
+    "DigestScheduleTimezone": {
+      "Type": "String",
+      "Default": "Australia/Perth",
+      "Description": "IANA timezone the schedule expression is evaluated in."
+    }
+  },
+
+  "Resources": {
+    "DigestFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "FunctionName": "dooduckinn-digest-scan",
+        "Description": "Daily Gmail digest — invoked directly by EventBridge Scheduler, not through API Gateway.",
+        "Runtime": "dotnet10",
+        "Architectures": ["x86_64"],
+        "Handler": "DooDuckInn.DigestScanFunction::DooDuckInn.DigestScanFunction.Function::FunctionHandler",
+        "CodeUri": ".",
+        "MemorySize": 512,
+        "Timeout": 300,
+        "Environment": {
+          "Variables": {
+            "ConnectionString__DooDuckInn": "{{resolve:ssm:/dooduckinn/ConnectionString}}",
+            "Glm__ApiKey": "{{resolve:ssm:/dooduckinn/Glm/ApiKey}}",
+            "Gmail__ClientId": "{{resolve:ssm:/dooduckinn/Gmail/ClientId}}",
+            "Gmail__ClientSecret": "{{resolve:ssm:/dooduckinn/Gmail/ClientSecret}}",
+            "Gmail__RefreshToken": "{{resolve:ssm:/dooduckinn/Gmail/RefreshToken}}"
+          }
+        },
+        "Events": {
+          "DailyDigestSchedule": {
+            "Type": "ScheduleV2",
+            "Properties": {
+              "ScheduleExpression": { "Ref": "DigestScheduleExpression" },
+              "ScheduleExpressionTimezone": { "Ref": "DigestScheduleTimezone" },
+              "FlexibleTimeWindow": { "Mode": "OFF" },
+              "State": "ENABLED"
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "Outputs": {
+    "DigestFunctionArn": {
+      "Value": { "Fn::GetAtt": ["DigestFunction", "Arn"] }
+    }
+  }
+}

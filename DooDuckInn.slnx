@@ -2,5 +2,6 @@
   <Folder Name="/backend/">
     <Project Path="backend/DooDuckInn/DooDuckInn.csproj"/>
     <Project Path="backend/DooDuckInn.Tests/DooDuckInn.Tests.csproj"/>
+    <Project Path="backend/DooDuckInn.DigestScanFunction/DooDuckInn.DigestScanFunction.csproj"/>
   </Folder>
 </Solution>

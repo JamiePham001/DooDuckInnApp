@@ -1,0 +1,224 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "DooDuckInn API — ASP.NET Core Lambda behind API Gateway (REST, proxy integration), plus the SSM Parameter Store config shared with the digest-scan stack (deploy this stack first — the digest stack reads these parameters by name, it doesn't create them).",
+
+  "Parameters": {
+    "Stage": {
+      "Type": "String",
+      "Default": "prod",
+      "Description": "API Gateway deployment stage name."
+    },
+    "CognitoAuthority": {
+      "Type": "String",
+      "Description": "Cognito:Authority — e.g. https://cognito-idp.<region>.amazonaws.com/<user-pool-id>"
+    },
+    "CognitoClientId": {
+      "Type": "String",
+      "Description": "Cognito:ClientId — the app client ID JWT audiences are validated against."
+    },
+    "ConnectionStringDooDuckInn": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "Full Npgsql connection string for the Neon Postgres database."
+    },
+    "GlmApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "API key for Z.ai's Anthropic-compatible GLM endpoint."
+    },
+    "GmailClientId": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "Google OAuth client ID used by GmailClient to read the inbox for the digest."
+    },
+    "GmailClientSecret": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "Google OAuth client secret."
+    },
+    "GmailRefreshToken": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "Google OAuth refresh token for the Gmail account being scanned."
+    },
+    "SesSmtpHost": {
+      "Type": "String",
+      "Default": "email-smtp.ap-southeast-2.amazonaws.com",
+      "Description": "SES SMTP endpoint used to send GST report / order emails."
+    },
+    "SesSmtpUsername": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "SES SMTP username."
+    },
+    "SesSmtpPassword": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "SES SMTP password."
+    },
+    "SesFromAddress": {
+      "Type": "String",
+      "Description": "Verified SES sender address emails are sent from."
+    }
+  },
+
+  "Resources": {
+    "ConnectionStringParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/ConnectionString",
+        "Type": "String",
+        "Value": { "Ref": "ConnectionStringDooDuckInn" },
+        "Description": "Neon Postgres connection string."
+      }
+    },
+    "GlmApiKeyParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Glm/ApiKey",
+        "Type": "String",
+        "Value": { "Ref": "GlmApiKey" }
+      }
+    },
+    "GmailClientIdParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Gmail/ClientId",
+        "Type": "String",
+        "Value": { "Ref": "GmailClientId" }
+      }
+    },
+    "GmailClientSecretParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Gmail/ClientSecret",
+        "Type": "String",
+        "Value": { "Ref": "GmailClientSecret" }
+      }
+    },
+    "GmailRefreshTokenParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Gmail/RefreshToken",
+        "Type": "String",
+        "Value": { "Ref": "GmailRefreshToken" }
+      }
+    },
+    "CognitoAuthorityParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Cognito/Authority",
+        "Type": "String",
+        "Value": { "Ref": "CognitoAuthority" }
+      }
+    },
+    "CognitoClientIdParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Cognito/ClientId",
+        "Type": "String",
+        "Value": { "Ref": "CognitoClientId" }
+      }
+    },
+    "SesSmtpHostParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Ses/SmtpHost",
+        "Type": "String",
+        "Value": { "Ref": "SesSmtpHost" }
+      }
+    },
+    "SesSmtpUsernameParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Ses/SmtpUsername",
+        "Type": "String",
+        "Value": { "Ref": "SesSmtpUsername" }
+      }
+    },
+    "SesSmtpPasswordParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Ses/SmtpPassword",
+        "Type": "String",
+        "Value": { "Ref": "SesSmtpPassword" }
+      }
+    },
+    "SesFromAddressParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Ses/FromAddress",
+        "Type": "String",
+        "Value": { "Ref": "SesFromAddress" }
+      }
+    },
+
+    "ApiGatewayApi": {
+      "Type": "AWS::Serverless::Api",
+      "Properties": {
+        "StageName": { "Ref": "Stage" },
+        "EndpointConfiguration": "REGIONAL"
+      }
+    },
+
+    "ApiFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "FunctionName": "dooduckinn-api",
+        "Description": "ASP.NET Core API — invoked by API Gateway via the AddAWSLambdaHosting proxy integration.",
+        "Runtime": "dotnet10",
+        "Architectures": ["x86_64"],
+        "Handler": "DooDuckInn",
+        "CodeUri": ".",
+        "MemorySize": 256,
+        "Timeout": 60,
+        "Environment": {
+          "Variables": {
+            "ConnectionString__DooDuckInn": { "Ref": "ConnectionStringDooDuckInn" },
+            "Glm__ApiKey": { "Ref": "GlmApiKey" },
+            "Gmail__ClientId": { "Ref": "GmailClientId" },
+            "Gmail__ClientSecret": { "Ref": "GmailClientSecret" },
+            "Gmail__RefreshToken": { "Ref": "GmailRefreshToken" },
+            "Cognito__Authority": { "Ref": "CognitoAuthority" },
+            "Cognito__ClientId": { "Ref": "CognitoClientId" },
+            "Ses__SmtpHost": { "Ref": "SesSmtpHost" },
+            "Ses__SmtpUsername": { "Ref": "SesSmtpUsername" },
+            "Ses__SmtpPassword": { "Ref": "SesSmtpPassword" },
+            "Ses__FromAddress": { "Ref": "SesFromAddress" }
+          }
+        },
+        "Events": {
+          "ProxyResource": {
+            "Type": "Api",
+            "Properties": {
+              "RestApiId": { "Ref": "ApiGatewayApi" },
+              "Path": "/{proxy+}",
+              "Method": "ANY"
+            }
+          },
+          "RootResource": {
+            "Type": "Api",
+            "Properties": {
+              "RestApiId": { "Ref": "ApiGatewayApi" },
+              "Path": "/",
+              "Method": "ANY"
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "Outputs": {
+    "ApiUrl": {
+      "Description": "Base URL for the deployed API.",
+      "Value": {
+        "Fn::Sub": "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+      }
+    },
+    "ApiFunctionArn": {
+      "Value": { "Fn::GetAtt": ["ApiFunction", "Arn"] }
+    }
+  }
+}

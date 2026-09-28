@@ -41,8 +41,12 @@ A business mobile application striving to help my dad become self sufficient in 
   - swipe actions
   - camera feature and retrieving image data
   - useFocusEffect
+  - language localisation
 
 ## What I Can Improve On
+
+- Used either a different backend framework or different hosting solution completely. The breadth of detail and completeness of the current offical AWS documentation for .NET C# with AWS services is lacking. Making it very difficult to self implement AWS services without heavy assistance of AI.
+- Use more popular frameworks when wanting to implement the latest, most powerful, cheapest, and fastests AI agents for workflows. .NET C# seems to lack priority when it comes to having the latest and greatest AI agents from larger corporations (outside of Anthropic) and smallet AI companies. When reseraching to find the strongest and cheapest alternatives for this project AI workflows, .NET fell short with having access to SDKs with the latest Muse Spark, QWEN, KIMI, and Gemini 3.0+ models. I had to resort to "hacky" methods by replacing the API associated with the Anthropic SDK with another AI API endpoint in order to use my cheaper alternative.
 
 ## Relational Model
 
