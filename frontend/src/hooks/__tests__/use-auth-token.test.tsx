@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert, Text } from "react-native";
-import { screen, waitFor } from "@testing-library/react-native";
+import { act, screen, waitFor } from "@testing-library/react-native";
 import { fetchAuthSession } from "aws-amplify/auth";
 
 import { AuthTokenProvider, useAuthToken } from "../use-auth-token";
@@ -25,6 +25,7 @@ function Consumer() {
 
 describe("AuthTokenProvider", () => {
   beforeEach(() => {
+    mockFetchAuthSession.mockClear();
     jest.spyOn(Alert, "alert").mockImplementation(() => {});
   });
 
@@ -78,5 +79,32 @@ describe("AuthTokenProvider", () => {
     );
 
     await waitFor(() => expect(screen.getByTestId("error").props.children).toBe("true"));
+  });
+
+  it("re-fetches the token periodically instead of only once at launch", async () => {
+    // Asserting the interval is actually registered (rather than advancing fake timers
+    // through render()/waitFor()'s own async machinery, which fight each other) — a stale
+    // token sitting unrefreshed for the rest of the session is exactly the bug this fixes.
+    const setIntervalSpy = jest.spyOn(global, "setInterval");
+    mockFetchAuthSession.mockResolvedValue({
+      tokens: { idToken: { toString: () => "real-jwt" } },
+    });
+
+    await render(
+      <I18nProvider>
+        <AuthTokenProvider>
+          <Consumer />
+        </AuthTokenProvider>
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(mockFetchAuthSession).toHaveBeenCalledTimes(1));
+
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5 * 60 * 1000);
+
+    const [intervalCallback] = setIntervalSpy.mock.calls[0];
+    await act(async () => {
+      await intervalCallback();
+    });
+    expect(mockFetchAuthSession).toHaveBeenCalledTimes(2);
   });
 });

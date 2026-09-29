@@ -65,8 +65,13 @@ export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
     };
     getToken();
 
+    // at a certain interval (1 hour), refetch the token. This is to specifically handle cases when tokens expire and become stale,
+    // redirecting the user back to the login screen
+    const intervalId = setInterval(getToken, 5 * 60 * 1000);
+
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
     };
   }, []);
 
