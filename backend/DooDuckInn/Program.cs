@@ -94,3 +94,4 @@ app.UseHttpsRedirection();
 
 app.Run();
 
+// test run deploy aws
