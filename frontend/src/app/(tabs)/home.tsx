@@ -31,7 +31,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 // Matches DigestPriority in the backend (src/digests/digests.model.cs) — serializes as its
 // underlying int since no JsonStringEnumConverter is registered anywhere in this codebase.
@@ -68,7 +68,7 @@ interface IDigestItem {
 }
 
 const fetchDigest = async (jwtToken: string): Promise<IDigestItem[]> => {
-  const res = await fetch(`http://${API_HOST}:5010/api/digests/latest`, {
+  const res = await fetch(`${API_BASE_URL}/api/digests/latest`, {
     headers: { Authorization: `Bearer ${jwtToken}` },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);

@@ -12,7 +12,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { File } from "expo-file-system";
 import { setPendingScannedTransactionId } from "@/utils/scan-signal";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 const InvoiceScan = () => {
   const [permission, requestPermission] = useCameraPermissions();
@@ -53,7 +53,7 @@ const InvoiceScan = () => {
     formData.append("image", new File(uri));
     try {
       const res = await fetch(
-        `http://${API_HOST}:5010/api/taxes/${id}/transactions/scan`,
+        `${API_BASE_URL}/api/taxes/${id}/transactions/scan`,
         {
           method: "POST",
           headers: {

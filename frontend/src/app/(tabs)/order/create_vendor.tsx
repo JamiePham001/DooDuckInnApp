@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spacing } from "@/constants/theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ISupplier {
   id: number;
@@ -39,7 +39,7 @@ const CreateVendor = () => {
 
     setCreating(true);
     try {
-      const res = await fetch(`http://${API_HOST}:5010/api/suppliers`, {
+      const res = await fetch(`${API_BASE_URL}/api/suppliers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

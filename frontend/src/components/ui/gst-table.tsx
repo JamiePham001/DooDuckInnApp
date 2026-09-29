@@ -26,7 +26,7 @@ import {
 } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ITransactionRes {
   id: number;
@@ -280,7 +280,7 @@ const GstTable = ({
     try {
       setCreating(true);
       const res = await fetch(
-        `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
+        `${API_BASE_URL}/api/taxes/${taxId}/transactions`,
         {
           method: "POST",
           headers: {
@@ -312,7 +312,7 @@ const GstTable = ({
   const deleteRow = async (transactionId: number) => {
     try {
       const res = await fetch(
-        `http://${API_HOST}:5010/api/transactions/${transactionId}`,
+        `${API_BASE_URL}/api/transactions/${transactionId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${jwtToken}` },
@@ -374,7 +374,7 @@ const GstTable = ({
                 initialName={transaction.name}
                 onSave={(name) =>
                   fetch(
-                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
+                    `${API_BASE_URL}/api/transactions/${transaction.id}/update/name?name=${encodeURIComponent(name)}`,
                     {
                       method: "PATCH",
                       headers: { Authorization: `Bearer ${jwtToken}` },
@@ -388,7 +388,7 @@ const GstTable = ({
                 setArray={setTableArray}
                 onSave={(amount) =>
                   fetch(
-                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/amount${
+                    `${API_BASE_URL}/api/transactions/${transaction.id}/update/amount${
                       amount === null ? "" : `?amount=${encodeURIComponent(amount)}`
                     }`,
                     {
@@ -402,7 +402,7 @@ const GstTable = ({
                 initialGst={transaction.gst}
                 onSave={(gst) =>
                   fetch(
-                    `http://${API_HOST}:5010/api/transactions/${transaction.id}/update/gst${
+                    `${API_BASE_URL}/api/transactions/${transaction.id}/update/gst${
                       gst === null ? "" : `?gst=${encodeURIComponent(gst)}`
                     }`,
                     {

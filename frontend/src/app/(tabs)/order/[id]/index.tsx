@@ -28,7 +28,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ISupplier {
   id: number;
@@ -50,7 +50,7 @@ const fetchSupplier = async (
   jwtToken: string,
 ): Promise<ISupplier> => {
   const res = await fetch(
-    `http://${API_HOST}:5010/api/suppliers/${supplierId}`,
+    `${API_BASE_URL}/api/suppliers/${supplierId}`,
     {
       headers: { Authorization: `Bearer ${jwtToken}` },
     },
@@ -64,7 +64,7 @@ const fetchItems = async (
   jwtToken: string,
 ): Promise<IItem[]> => {
   const res = await fetch(
-    `http://${API_HOST}:5010/api/suppliers/${supplierId}/items`,
+    `${API_BASE_URL}/api/suppliers/${supplierId}/items`,
     { headers: { Authorization: `Bearer ${jwtToken}` } },
   );
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -200,7 +200,7 @@ export default function VendorDetailPage() {
     try {
       setCreating(true);
       const res = await fetch(
-        `http://${API_HOST}:5010/api/suppliers/${supplierId}/item`,
+        `${API_BASE_URL}/api/suppliers/${supplierId}/item`,
         {
           method: "POST",
           headers: {
@@ -222,7 +222,7 @@ export default function VendorDetailPage() {
 
   const deleteItem = async (itemId: number) => {
     try {
-      const res = await fetch(`http://${API_HOST}:5010/api/items/${itemId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/items/${itemId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${jwtToken}` },
       });
@@ -365,7 +365,7 @@ export default function VendorDetailPage() {
                     initialName={item.name}
                     onSave={(name) =>
                       fetch(
-                        `http://${API_HOST}:5010/api/items/${item.id}/update/name?name=${encodeURIComponent(name)}`,
+                        `${API_BASE_URL}/api/items/${item.id}/update/name?name=${encodeURIComponent(name)}`,
                         {
                           method: "PATCH",
                           headers: { Authorization: `Bearer ${jwtToken}` },
@@ -377,7 +377,7 @@ export default function VendorDetailPage() {
                     initialQty={item.quantity}
                     onSave={(qty) =>
                       fetch(
-                        `http://${API_HOST}:5010/api/items/${item.id}/update/quantity?qty=${qty}`,
+                        `${API_BASE_URL}/api/items/${item.id}/update/quantity?qty=${qty}`,
                         {
                           method: "PATCH",
                           headers: { Authorization: `Bearer ${jwtToken}` },

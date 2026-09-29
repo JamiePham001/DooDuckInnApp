@@ -7,7 +7,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spacing } from "@/constants/theme";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
 
@@ -25,7 +25,7 @@ const fetchSupplier = async (
   supplierId: number,
   jwtToken: string,
 ): Promise<ISupplier> => {
-  const res = await fetch(`http://${API_HOST}:5010/api/suppliers/${supplierId}`, {
+  const res = await fetch(`${API_BASE_URL}/api/suppliers/${supplierId}`, {
     headers: { Authorization: `Bearer ${jwtToken}` },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -72,7 +72,7 @@ const EditVendor = () => {
     setSaving(true);
     try {
       const res = await fetch(
-        `http://${API_HOST}:5010/api/suppliers/${supplierId}/update/details`,
+        `${API_BASE_URL}/api/suppliers/${supplierId}/update/details`,
         {
           method: "PATCH",
           headers: {

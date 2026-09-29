@@ -44,6 +44,7 @@ aws-lambda-tools-defaults.json
 ~$*
 *~
 CodeCoverage/
+*.template.json
 
 # MSBuild Binary and Structured Log
 *.binlog
@@ -58,3 +59,6 @@ TestResult.xml
 nunit-*.xml
 .neon
 .env.local
+
+github-actions-deploy-policy.json
+trust-policy-broken.json

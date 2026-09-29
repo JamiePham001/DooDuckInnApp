@@ -16,7 +16,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ITaxReport {
   id: number;
@@ -70,7 +70,7 @@ const CreateReport = () => {
       const end = new Date(`${year}-${endMonth}-01`);
       const toDateOnly = (d: Date) => d.toISOString().slice(0, 10);
 
-      const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
+      const res = await fetch(`${API_BASE_URL}/api/taxes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

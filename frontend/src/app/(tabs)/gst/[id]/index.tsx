@@ -27,7 +27,7 @@ import { Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ITransactionRes {
   id: number;
@@ -79,7 +79,7 @@ export default function GstReportEditorPage() {
       setTaxLoading(true);
       setTaxError(false);
       try {
-        const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/taxes/${taxId}`, {
           headers: { Authorization: `Bearer ${jwtToken}` },
         });
         if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -107,7 +107,7 @@ export default function GstReportEditorPage() {
         setTransactionsError(false);
         try {
           const res = await fetch(
-            `http://${API_HOST}:5010/api/taxes/${taxId}/transactions`,
+            `${API_BASE_URL}/api/taxes/${taxId}/transactions`,
             {
               method: "GET",
               headers: {
@@ -155,7 +155,7 @@ export default function GstReportEditorPage() {
       setSending(true);
       setModalVisible(!modalVisible);
       const res = await fetch(
-        `http://${API_HOST}:5010/api/taxes/${taxId}/send-report`,
+        `${API_BASE_URL}/api/taxes/${taxId}/send-report`,
         {
           method: "POST",
           headers: {

@@ -12,3 +12,8 @@ import { Platform } from "react-native";
 // launchSettings.json).
 export const API_HOST =
   process.env.EXPO_PUBLIC_API_HOST ?? (Platform.OS === "android" ? "10.0.2.2" : "localhost");
+
+// EXPO_PUBLIC_API_HOST doubles as either a bare dev-machine host ("10.1.1.211") or a full
+// deployed API base URL ("https://xyz.execute-api.ap-southeast-2.amazonaws.com/prod") — a bare
+// host still needs the local dev server's scheme/port appended, a full URL is already complete.
+export const API_BASE_URL = /^https?:\/\//.test(API_HOST) ? API_HOST : `http://${API_HOST}:5010`;

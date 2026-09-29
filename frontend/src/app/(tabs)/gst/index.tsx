@@ -24,7 +24,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 import { formatDateRange } from "@/utils/format-date-range";
 
 interface ITaxReport {
@@ -40,7 +40,7 @@ interface ITaxReport {
 // LAN IP (or an env-based config) once testing on a physical device.
 
 const fetchReports = async (jwtToken: string): Promise<ITaxReport[]> => {
-  const res = await fetch(`http://${API_HOST}:5010/api/taxes`, {
+  const res = await fetch(`${API_BASE_URL}/api/taxes`, {
     headers: { Authorization: `Bearer ${jwtToken}` },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -156,7 +156,7 @@ export default function GstListPage() {
 
   const deleteReport = async (taxId: number) => {
     try {
-      const res = await fetch(`http://${API_HOST}:5010/api/taxes/${taxId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/taxes/${taxId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${jwtToken}` },
       });

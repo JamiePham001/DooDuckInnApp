@@ -25,7 +25,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
-import { API_HOST } from "@/constants/api";
+import { API_BASE_URL } from "@/constants/api";
 
 interface ISupplier {
   id: number;
@@ -37,7 +37,7 @@ interface ISupplier {
 
 
 const fetchSuppliers = async (jwtToken: string): Promise<ISupplier[]> => {
-  const res = await fetch(`http://${API_HOST}:5010/api/users/me/suppliers`, {
+  const res = await fetch(`${API_BASE_URL}/api/users/me/suppliers`, {
     method: "GET",
     headers: { Authorization: `Bearer ${jwtToken}` },
   });
@@ -74,7 +74,7 @@ function SupplierRow({
 
   const deleteSupplier = async (id: number, jwtToken: string) => {
     try {
-      const res = await fetch(`http://${API_HOST}:5010/api/suppliers/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/suppliers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${jwtToken}` },
       });
