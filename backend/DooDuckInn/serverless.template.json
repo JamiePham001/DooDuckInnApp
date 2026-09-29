@@ -172,7 +172,7 @@
         "Handler": "DooDuckInn",
         "CodeUri": ".",
         "MemorySize": 256,
-        "Timeout": 60,
+        "Timeout": 29,
         "Environment": {
           "Variables": {
             "ConnectionString__DooDuckInn": { "Ref": "ConnectionStringDooDuckInn" },
@@ -218,7 +218,8 @@
       }
     },
     "ApiFunctionArn": {
-      "Value": { "Fn::GetAtt": ["ApiFunction", "Arn"] }
+      "Value": { "Fn::GetAtt": ["ApiFunction", "Arn"] },
+      "Export": { "Name": "dooduckinn-api-ApiFunctionArn" }
     }
   }
 }

@@ -20,5 +20,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Email)
             .IsRequired()
             .HasMaxLength(150);
+
+        builder.Property(u => u.ScanCount)
+            .IsRequired()
+            .HasDefaultValue(0);
     }
 }

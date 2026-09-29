@@ -21,7 +21,12 @@
       "Type": "AWS::Serverless::Function",
       "Properties": {
         "FunctionName": "dooduckinn-digest-scan",
-        "Description": "Daily Gmail digest — invoked directly by EventBridge Scheduler, not through API Gateway.",
+        "Description": {
+          "Fn::Sub": [
+            "Daily Gmail digest — invoked directly by EventBridge Scheduler, not through API Gateway. Reads config from the same account's dooduckinn-api stack (${ApiFunctionArn}) — this Fn::ImportValue is a deliberate hard CloudFormation dependency, so that stack can't be deleted out from under this one.",
+            { "ApiFunctionArn": { "Fn::ImportValue": "dooduckinn-api-ApiFunctionArn" } }
+          ]
+        },
         "Runtime": "dotnet10",
         "Architectures": ["x86_64"],
         "Handler": "DooDuckInn.DigestScanFunction::DooDuckInn.DigestScanFunction.Function::FunctionHandler",

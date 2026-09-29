@@ -115,6 +115,14 @@ public class TaxesController(
         {
             var me = await CurrentUserAsync();
 
+            // Each scan calls GLM — this bounds runaway cost (a bug, a loop, a stuck retry),
+            // not abuse from other users, since every request here is already authenticated as
+            // the one Cognito user this app has.
+            var today = DateOnly.FromDateTime(
+                TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Australia/Perth")));
+            if (!await users.TryRegisterScanAsync(me.Id, today))
+                return StatusCode(429, "Daily scan limit reached. Try again tomorrow.");
+
             using var ms = new MemoryStream();
             await image.CopyToAsync(ms);
             var transaction = await transactions.CreateFromImageAsync(id, me.Id, ms.ToArray(), image.ContentType);

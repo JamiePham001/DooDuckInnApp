@@ -40,4 +40,13 @@ public class UsersService(AppDbContext db)
         await db.SaveChangesAsync();
         return true;
     }
+
+    // True and quota consumed, or false if today's scan limit is already used up.
+    public async Task<bool> TryRegisterScanAsync(int userId, DateOnly today)
+    {
+        var user = await GetById(userId);
+        var allowed = user.TryRegisterScan(today);
+        await db.SaveChangesAsync();
+        return allowed;
+    }
 }

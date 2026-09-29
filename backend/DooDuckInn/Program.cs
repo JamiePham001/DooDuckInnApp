@@ -74,6 +74,7 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<DigestsService>();
 builder.Services.AddScoped<DigestAgent>();
 builder.Services.AddScoped<GmailClient>();
+// builder.Services.AddHostedService<DailyDigestBackgroundService>();
 
 var app = builder.Build();
 
