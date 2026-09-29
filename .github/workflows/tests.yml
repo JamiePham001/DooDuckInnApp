@@ -81,6 +81,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # TEMPORARY: prints the actual OIDC token claims GitHub sends, and the role
+      # ARN we're targeting, so we can compare them against the IAM trust policy
+      # instead of guessing. Remove once the AssumeRoleWithWebIdentity issue is fixed.
+      - name: Debug OIDC token
+        run: |
+          echo "role-to-assume secret (masked by GH if it matches): '${{ secrets.AWS_DEPLOY_ROLE_ARN }}'"
+          echo "role-to-assume length: ${#ROLE_ARN}"
+          IDTOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          echo "$IDTOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq .
+        env:
+          ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
