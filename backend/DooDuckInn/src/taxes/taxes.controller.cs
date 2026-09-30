@@ -28,8 +28,15 @@ public class TaxesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var me = await CurrentUserAsync();
-        return Ok(await taxes.GetByUserId(me.Id));
+        try
+        {
+            var me = await CurrentUserAsync();
+            return Ok(await taxes.GetByUserId(me.Id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     [HttpPost]
