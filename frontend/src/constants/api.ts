@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 // Flip this and save to switch targets — hot-reloads immediately, unlike editing
 // EXPO_PUBLIC_API_HOST in .env.local which needs a full Metro restart (env vars
 // are inlined into the bundle once, at build time).
-const USE_LOCAL_BACKEND = false;
+export const USE_LOCAL_BACKEND = false;
 
 // __DEV__ is false in any release/EAS build — fails loudly instead of shipping an app that
 // silently can't reach anything, if this ever gets left on by accident.

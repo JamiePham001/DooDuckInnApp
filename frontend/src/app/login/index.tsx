@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { signIn } from "aws-amplify/auth";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-
+import { USE_LOCAL_BACKEND } from "@/constants/api";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -10,7 +10,11 @@ import { Radius, Spacing, Typography } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 
-const USERNAME = process.env.EXPO_PUBLIC_LOGIN_USERNAME!;
+// Separate Cognito users for dev vs. prod so testing locally never shares a live
+// Amplify session with the real account (currently your dad's).
+const USERNAME = USE_LOCAL_BACKEND
+  ? process.env.EXPO_PUBLIC_LOGIN_USERNAME_DEV!
+  : process.env.EXPO_PUBLIC_LOGIN_USERNAME_PROD!;
 const PIN_LENGTH = 6;
 const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
