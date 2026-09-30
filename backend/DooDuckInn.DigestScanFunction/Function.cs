@@ -54,6 +54,7 @@ public class Function
         if (!await digests.HasRunTodayAsync(today))
         {
             await digests.RunAsync(today);
+            await digests.DeleteOldEmailsAsync(today);
         }
     }
 }

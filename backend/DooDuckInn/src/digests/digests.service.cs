@@ -45,4 +45,12 @@ public class DigestsService(AppDbContext db, GmailClient gmail, DigestAgent agen
         logger.LogInformation("Digest saved: {Count} items for {Date}", items.Count, today);
         return items;
     }
+
+    public async Task<int> DeleteOldEmailsAsync(DateOnly today)
+    {
+        var items = await db.Digests.Where(d => d.RunDate < today).ToListAsync();
+        db.Digests.RemoveRange(items);
+        await db.SaveChangesAsync();
+        return items.Count;
+    }
 }
