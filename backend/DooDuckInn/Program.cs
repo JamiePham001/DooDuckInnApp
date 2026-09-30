@@ -52,7 +52,8 @@ builder.Services.AddScoped<TransactionAgent>();
 // `AppDbContext db` parameter and have it handed to them). Skipped under the "Testing" environment
 // so CustomWebApplicationFactory can register InMemory instead — registering Npgsql here first
 // makes EF Core see two database providers in the same service provider and throw.
-// Set locally via `dotnet user-secrets set ConnectionStrings:DooDuckInn "..."` (see .env.local for the Neon URL).
+// Set locally via `dotnet user-secrets set ConnectionString:DooDuckInn "..."` — point it at your
+// local Postgres for dev, or the Neon URL for prod (see .env.local for the Neon URL).
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     var connectionString = builder.Configuration["ConnectionString:DooDuckInn"];

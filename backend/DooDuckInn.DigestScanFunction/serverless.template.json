@@ -28,7 +28,7 @@
           ]
         },
         "Runtime": "dotnet10",
-        "Architectures": ["x86_64"],
+        "Architectures": ["arm64"],
         "Handler": "DooDuckInn.DigestScanFunction::DooDuckInn.DigestScanFunction.Function::FunctionHandler",
         "CodeUri": ".",
         "MemorySize": 512,

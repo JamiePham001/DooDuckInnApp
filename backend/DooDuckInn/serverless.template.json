@@ -168,10 +168,10 @@
         "FunctionName": "dooduckinn-api",
         "Description": "ASP.NET Core API — invoked by API Gateway via the AddAWSLambdaHosting proxy integration.",
         "Runtime": "dotnet10",
-        "Architectures": ["x86_64"],
+        "Architectures": ["arm64"],
         "Handler": "DooDuckInn",
         "CodeUri": ".",
-        "MemorySize": 256,
+        "MemorySize": 512,
         "Timeout": 29,
         "Environment": {
           "Variables": {
