@@ -1,6 +1,5 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
-using Microsoft.Extensions.Configuration;
 using MimeKit;
 
 namespace DooDuckInn.src.email;
@@ -23,7 +22,11 @@ public class EmailService(IConfiguration config)
         message.From.Add(MailboxAddress.Parse(RequireConfig("Ses:FromAddress")));
         message.To.Add(MailboxAddress.Parse(toAddress));
         message.Subject = subject;
-        // message.Cc.Add(MailboxAddress.Parse("some other persons email"));
+        message.Cc.Add(MailboxAddress.Parse("hoangkaraoke888@gmail.com"));
+        if (toAddress == "admin2@gordondu-associates.com.au")
+        {
+            message.Cc.Add(MailboxAddress.Parse("jamie.pham@outlook.com"));
+        }
 
         var builder = new BodyBuilder { TextBody = textBody, HtmlBody = htmlBody };
         if (attachment is not null)

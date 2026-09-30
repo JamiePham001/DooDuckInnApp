@@ -53,13 +53,7 @@ public class Function
         // check whether the email scan has already been ran within the same day
         if (!await digests.HasRunTodayAsync(today))
         {
-            // run email scan if todays scan hasnt been performed.
-            context.Logger.Log("Running digest scan on emails \n");
             await digests.RunAsync(today);
-        }
-        else
-        {
-            context.Logger.Log("Digest process has already ran today \n");
         }
     }
 }
