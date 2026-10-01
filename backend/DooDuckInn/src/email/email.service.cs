@@ -36,9 +36,12 @@ public class EmailService(IConfiguration config)
         }
         message.Body = builder.ToMessageBody();
 
+        var port = int.Parse(config["Ses:SmtpPort"] ?? "587");
+        // Port 465 is implicit TLS (SmtpsOnConnect); 587/25 negotiate TLS via STARTTLS instead.
+        var security = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+
         using var client = new SmtpClient();
-        await client.ConnectAsync(RequireConfig("Ses:SmtpHost"), int.Parse(config["Ses:SmtpPort"] ?? "587"),
-            SecureSocketOptions.StartTls);
+        await client.ConnectAsync(RequireConfig("Ses:SmtpHost"), port, security);
         await client.AuthenticateAsync(RequireConfig("Ses:SmtpUsername"), RequireConfig("Ses:SmtpPassword"));
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
