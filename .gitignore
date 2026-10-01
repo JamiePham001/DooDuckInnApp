@@ -7,6 +7,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+# App Store Connect API key (frontend/eas.json submit config)
+AuthKey_*.p8
+*.p8
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

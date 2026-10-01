@@ -8,7 +8,15 @@
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.dooduckinn.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleLocalizations": [
+          "en",
+          "vi"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +26,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.frontend"
+      "package": "com.anonymous.frontend",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -46,13 +58,22 @@
       [
         "react-native-localize",
         {
-          "locales": ["en", "vi"]
+          "locales": [
+            "en",
+            "vi"
+          ]
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f268c394-4c27-4e9a-8b36-cfee055ff1df"
+      }
     }
   }
 }

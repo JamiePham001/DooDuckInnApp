@@ -28,6 +28,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useI18n } from "@/hooks/use-i18n";
 import { useAuthToken } from "@/hooks/use-auth-token";
 import { API_BASE_URL } from "@/constants/api";
+import { USE_LOCAL_BACKEND } from "@/constants/api";
 
 interface ITransactionRes {
   id: number;
@@ -163,7 +164,9 @@ export default function GstReportEditorPage() {
             Authorization: `Bearer ${jwtToken}`,
           },
           body: JSON.stringify({
-            RecipientEmail: "jamie.pham@outlook.com",
+            RecipientEmail: USE_LOCAL_BACKEND
+              ? "jamie.pham@outlook.com"
+              : "admin2@gordondu-associates.com.au",
           }),
         },
       );

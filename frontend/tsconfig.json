@@ -1,7 +1,6 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "jsx": "react",
     "strict": true,
     // Listed explicitly (rather than left to auto-inclusion) so adding "jest" doesn't
     // silently drop the ambient JSX/Node globals every other file already relies on —
