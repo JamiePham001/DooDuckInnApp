@@ -44,8 +44,8 @@
     },
     "SesSmtpHost": {
       "Type": "String",
-      "Default": "email-smtp.ap-southeast-2.amazonaws.com",
-      "Description": "SES SMTP endpoint used to send GST report / order emails."
+      "Default": "smtp-relay.brevo.com",
+      "Description": "SMTP endpoint used to send GST report / order emails."
     },
     "SesSmtpUsername": {
       "Type": "String",
@@ -60,6 +60,12 @@
     "SesFromAddress": {
       "Type": "String",
       "Description": "Verified SES sender address emails are sent from."
+    },
+    "SesSmtpPort": {
+      "Type": "String",
+      "Default": "465",
+      "NoEcho": true,
+      "Description": "SMTP port (465 = implicit TLS, used by Brevo)."
     }
   },
 
@@ -153,6 +159,14 @@
         "Value": { "Ref": "SesFromAddress" }
       }
     },
+    "SesSmtpPortParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/dooduckinn/Ses/SmtpPort",
+        "Type": "String",
+        "Value": { "Ref": "SesSmtpPort" }
+      }
+    },
 
     "ApiGatewayApi": {
       "Type": "AWS::Serverless::Api",
@@ -175,7 +189,9 @@
         "Timeout": 29,
         "Environment": {
           "Variables": {
-            "ConnectionString__DooDuckInn": { "Ref": "ConnectionStringDooDuckInn" },
+            "ConnectionString__DooDuckInn": {
+              "Ref": "ConnectionStringDooDuckInn"
+            },
             "Glm__ApiKey": { "Ref": "GlmApiKey" },
             "Gmail__ClientId": { "Ref": "GmailClientId" },
             "Gmail__ClientSecret": { "Ref": "GmailClientSecret" },
@@ -185,7 +201,8 @@
             "Ses__SmtpHost": { "Ref": "SesSmtpHost" },
             "Ses__SmtpUsername": { "Ref": "SesSmtpUsername" },
             "Ses__SmtpPassword": { "Ref": "SesSmtpPassword" },
-            "Ses__FromAddress": { "Ref": "SesFromAddress" }
+            "Ses__FromAddress": { "Ref": "SesFromAddress" },
+            "Ses__SmtpPort": { "Ref": "SesSmtpPort" }
           }
         },
         "Events": {
