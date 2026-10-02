@@ -1,89 +1,66 @@
 # About
 
-A business mobile application striving to help my dad become self sufficient in writing his own GST reports and simplifying ordering stock from suppliers via email. Creating a personalised experience that focuses on intuitive navigation and UI using his native Vietnamese language. The app will make use of Claude AI workflows to scan invoices, and automate producing documents and emails.
+A business mobile application striving to help my dad become self-sufficient in writing his own GST reports and simplifying ordering stock from suppliers via email. The core of this project focuses on creating a low-friction, highly automated solution for someone who isn't fluent with technology and struggles with using email clients and creating documents in Word independently.
 
-## Objectives
+## Key Features
 
-1.
+- Sending emails with the touch of a button
+- Automated production of PDF documents for GST reports
+  - Uses AI workflows to scan key data from invoices and import it directly into the document
+- A list of items to order from suppliers
+- Triaging emails by importance with an AI workflow cron job
+- Vietnamese language localisation
 
 ## Tech Stack
 
-- Frontend: React Native Expo
-- Backend Runtime: ASP.NET Core (.NET)
-- Compute / Hosting: AWS Lambda + AWS API Gateway
-- Database: Neon PostgreSQL
-- ORM / Data Layer: Entity Framework Core
-- Auth: AWS Cognito
-- File / Blob Storage: AWS S3
-- Monitoring / APM: AWS CloudWatch
-- Transactional Email: AWS SES
-- AI / LLM: Anthropic SDK with GLM5.3 Flash model
-- Search: Postgres FTS
-- CI / CD: GitHub Actions
+- **Frontend:** React Native (Expo)
+- **Backend Runtime:** ASP.NET Core (.NET)
+- **Compute / Hosting:** AWS Lambda + AWS API Gateway
+- **Database:** Neon PostgreSQL
+- **ORM / Data Layer:** Entity Framework Core
+- **Auth:** AWS Cognito & AWS Amplify
+- **File / Blob Storage:** AWS S3
+- **Monitoring / APM:** AWS CloudWatch with AWS SNS notifications
+- **Transactional Email:** Brevo
+- **AI / LLM:** Anthropic SDK with the GLM 5.3 Flash model
+- **CI/CD:** GitHub Actions
 
 ## What I Learned
 
-- Writing competely OOP code
-  - Defining tables/entities as classes
-  - defining class methods
-  - usage of records and enums
-- Configuring JWT bearer authentication with .NET
-- Validating tokens from and connecting to AWS Cognito
-- Generating stylised and professional PDF documents using QuestPDF library
-- Connecting to verified identities in AWS SES via SMTP to write custom automated emails and send documents.
-- Create AI Workflows with GLM5.3 Flash using Anthropic SDK
-  - optimising cost by taking into consideration the complexity of the task, changing the type of model, applying a cap on token usage, and concise instructions
-  - formatting output configuration from AI response
-  - embedding dynamic parameters into instructions
-  - processing image requests with AI workflows into useable and interactable data.
-- React Native / Expo
-  - splash screens
-  - swipe actions
-  - camera feature and retrieving image data
-  - useFocusEffect
-  - language localisation
+**Using .NET/C# and writing an entire codebase around OOP principles**
+- Defining tables/entities as classes
+- Defining class methods
+- Using records and enums
+
+**Generating styled, formatted PDF documents** using the QuestPDF library
+
+**Creating AI workflows**
+- Learning to use the right model for the right scenario. For instance, one requirement of this project was a model able to process images with high accuracy.
+
+**React Native / Expo**
+- Splash screens
+- Swipe actions to delete
+- Integrating a camera feature to take photos for image scans
+- `useFocusEffect`: running effects whenever a page enters focus — for instance, refetching data on a page that updates often during regular use of the app
+- Language localisation
+- Caching API calls on low-to-medium-traffic pages that only need refetching when actions on other pages affect them
+
+**AWS**
+- Creating CloudWatch alarms to detect and notify me (via SNS) of errors from Lambda functions and API Gateway
+- Using a code-to-architecture approach with AWS CloudFormation to build out serverless infrastructure
+
+**GitHub Actions**
+- Creating workflows to automate backend and frontend testing whenever commits are pushed to the repository
+- Creating a deploy workflow that only triggers when backend changes are pushed to the repository
 
 ## What I Can Improve On
 
-- Used either a different backend framework or different hosting solution completely. The breadth of detail and completeness of the current offical AWS documentation for .NET C# with AWS services is lacking. Making it very difficult to self implement AWS services without heavy assistance of AI.
-- Use more popular frameworks when wanting to implement the latest, most powerful, cheapest, and fastests AI agents for workflows. .NET C# seems to lack priority when it comes to having the latest and greatest AI agents from larger corporations (outside of Anthropic) and smallet AI companies. When reseraching to find the strongest and cheapest alternatives for this project AI workflows, .NET fell short with having access to SDKs with the latest Muse Spark, QWEN, KIMI, and Gemini 3.0+ models. I had to resort to "hacky" methods by replacing the API associated with the Anthropic SDK with another AI API endpoint in order to use my cheaper alternative.
+**Use a different backend framework or hosting solution entirely.** The breadth and completeness of the official AWS documentation for .NET/C# is lacking, which makes it difficult to self-implement AWS services without heavy AI assistance.
 
-## Relational Model
+**Use a more popular framework for AI workflows.** .NET seems to lag behind when it comes to having the latest and most powerful, cheap, and fast AI agent SDKs. When researching the strongest and cheapest options for this project's AI workflows, .NET fell short on access to SDKs for the latest Muse Spark, Qwen, Kimi, and Gemini 3.0+ models. I had to resort to "hacky" methods, like swapping the API endpoint behind the Anthropic SDK for a cheaper alternative provider.
 
-```
-USER
-  user_id       (PK, NOT_NULL, Integer)
-  cognito_sub   (NOT_NULL, UNIQUE, Varchar(150))
-  email         (NOT_NULL, Varchar(150))
+**Reduce Lambda cold start times to under a second.** This could be achieved with AWS's SnapStart. I didn't implement it because it adds complexity that doesn't seem worthwhile at the project's current scope — it requires repointing API Gateway to a different Lambda alias, ensuring newly deployed functions point to that alias, and handling stale database connections. Instead, I improved cold starts by increasing Lambda memory and using the arm64 architecture, which is better optimised for .NET.
 
-SUPPLIER
-  supplier_id   (PK, NOT_NULL, Integer)
-  user_id       (FK, NOT_NULL, Integer)
-  name          (NULL, Varchar(150))
-  email         (NULL, Varchar(100))
-  phone         (NULL, Varchar(15))
+**Plan the full tech stack earlier.** Since this was my first time using AWS, I underestimated how much Lambda functions and SnapStart could structurally impact my codebase. Going forward, combining personal research with AI planning ahead of time should solve this.
 
-ITEM
-  item_id       (PK, NOT_NULL, Integer)
-  supplier_id   (FK, NOT_NULL, Integer)
-  name          (NOT_NULL, Varchar(150))
-  quantity      (NOT_NULL, Integer, DEFAULT 0, CHECK >= 0)
-
-TAX
-  tax_id        (PK, NOT_NULL, Integer)
-  user_id       (FK, NOT_NULL, Integer)
-  start_date    (NOT_NULL, Date)
-  end_date      (NOT_NULL, Date, CHECK > start_date)
-  is_sent       (NOT_NULL, Boolean, DEFAULT false)
-  UNIQUE(user_id, start_date, end_date)
-
-TRANSACTION
-  transaction_id (PK, NOT_NULL, Integer)
-  tax_id         (FK, NOT_NULL, Integer)
-  name           (NOT_NULL, Varchar(150))
-  amount         (NOT_NULL, Double, DEFAULT 0)
-  gst            (NOT_NULL, Double)
-  type           (NOT_NULL, Integer, CHECK IN (0=Sale, 1=Purchase))
-```
-
-React Native Components
+**Make better use of agents in development.** This project was mostly a learning exercise — roughly half the code is hand-written. To improve productivity and my agentic workflows going forward, I'd add more behavioral guidance to `CLAUDE.md` to automate testing after certain actions, use `SKILLS.md` to improve test quality and coverage, and make more use of MCPs/plugins to give agents direct access to my stack and speed up the build process.
