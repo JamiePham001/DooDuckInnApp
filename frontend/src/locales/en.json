@@ -42,6 +42,7 @@
       "other": "%{count} emails"
     },
     "needAttention": "· %{count} need attention",
+    "scannedAt": "Scanned %{date}",
     "allClear": "All clear",
     "noAttention": "No emails need your attention today.",
     "loadError": "Couldn't load your emails",

@@ -58,6 +58,7 @@ const PRIORITY_COLOR: Record<DigestPriority, ThemeColor> = {
 
 interface IDigestItem {
   id: number;
+  runDate: string;
   gmailMessageId: string;
   senderName: string;
   senderEmail: string;
@@ -227,6 +228,15 @@ export default function HomeScreen() {
   const needsAttention =
     data?.filter((d) => d.priority <= DigestPriority.High).length ?? 0;
 
+  // Every item in a digest shares the same RunDate (GetLatestAsync filters to one run), so
+  // the first item's date stands in for "when was this scan done".
+  const scanDate = data?.[0]?.runDate
+    ? new Date(data[0].runDate).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : null;
+
   const renderBody = () => {
     if (error || tokenError) {
       return (
@@ -277,6 +287,11 @@ export default function HomeScreen() {
                 {t("home.emailCount", { count: data.length })}
                 {needsAttention > 0 &&
                   ` ${t("home.needAttention", { count: needsAttention })}`}
+              </ThemedText>
+            )}
+            {!!scanDate && (
+              <ThemedText themeColor="textSecondary" style={styles.headerMeta}>
+                {t("home.scannedAt", { date: scanDate })}
               </ThemedText>
             )}
           </View>

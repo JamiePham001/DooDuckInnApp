@@ -180,7 +180,7 @@ public class TaxesController(
             await email.SendAsync(
                 request.RecipientEmail,
                 $"Doo Duck Inn GST Report — {tax.StartDate:MMMM yyyy} to {tax.EndDate:MMMM yyyy}",
-                "Please find the attached GST report.",
+                "Please find the attached GST report. Contact 04 0638 9705 for any questions.",
                 attachment);
 
             await taxes.MarkSentAsync(id);

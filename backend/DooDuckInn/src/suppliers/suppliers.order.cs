@@ -5,7 +5,7 @@ namespace DooDuckInn.src.suppliers;
 public static class OrderEmail
 {
   // ponytail: hardcoded — swap for real contact details, or pull from config, when they're settled.
-  private const string ContactLine = "Questions about this order? Call: 04 1234 5678";
+  private const string ContactLine = "Questions about this order? Call: 04 0638 9705";
 
   public static string BuildText(DateOnly deliveryDate, IReadOnlyList<Item> items)
   {

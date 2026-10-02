@@ -41,6 +41,7 @@
       "other": "%{count} email"
     },
     "needAttention": "· %{count} cần chú ý",
+    "scannedAt": "Đã quét %{date}",
     "allClear": "Không có gì cần xử lý",
     "noAttention": "Không có email nào cần bạn chú ý hôm nay.",
     "loadError": "Không thể tải email của bạn",
