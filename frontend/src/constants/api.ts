@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 // Flip this and save to switch targets — hot-reloads immediately, unlike editing
 // EXPO_PUBLIC_API_HOST in .env.local which needs a full Metro restart (env vars
 // are inlined into the bundle once, at build time).
-export const USE_LOCAL_BACKEND = false;
+export const USE_LOCAL_BACKEND = true;
 
 // __DEV__ is false in any release/EAS build — fails loudly instead of shipping an app that
 // silently can't reach anything, if this ever gets left on by accident.
@@ -26,10 +26,7 @@ const DEPLOYED_API_BASE_URL =
 // `ifconfig` on Mac/Linux) — both devices need to be on the same Wi-Fi, and the
 // backend needs to be listening on 0.0.0.0, not just localhost (see
 // launchSettings.json).
-export const API_HOST = USE_LOCAL_BACKEND
-  ? (process.env.EXPO_PUBLIC_API_HOST ??
-    (Platform.OS === "android" ? "10.0.2.2" : "localhost"))
-  : DEPLOYED_API_BASE_URL;
+export const API_HOST = USE_LOCAL_BACKEND ? "10.0.2.2" : DEPLOYED_API_BASE_URL;
 
 // EXPO_PUBLIC_API_HOST doubles as either a bare dev-machine host ("10.1.1.211") or a full
 // deployed API base URL ("https://xyz.execute-api.ap-southeast-2.amazonaws.com/prod") — a bare

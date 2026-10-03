@@ -24,7 +24,11 @@
         "Description": {
           "Fn::Sub": [
             "Daily Gmail digest, run by EventBridge Scheduler. Depends on ${ApiFunctionArn}.",
-            { "ApiFunctionArn": { "Fn::ImportValue": "dooduckinn-api-ApiFunctionArn" } }
+            {
+              "ApiFunctionArn": {
+                "Fn::ImportValue": "dooduckinn-api-ApiFunctionArn"
+              }
+            }
           ]
         },
         "Runtime": "dotnet10",
