@@ -92,4 +92,5 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// test test test
 app.Run();
