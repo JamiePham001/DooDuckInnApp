@@ -26,4 +26,9 @@ public class DigestItem
         Priority = priority;
         ReceivedAt = receivedAt;
     }
+
+    // Called when a still-inboxed email reappears in a later run instead of being
+    // re-summarized: keeps it counted as part of today's digest so DeleteOldEmailsAsync
+    // doesn't sweep it up as stale, without paying for another Claude call.
+    public void CarryForward(DateOnly today) => RunDate = today;
 }

@@ -74,4 +74,29 @@ public class DigestsServiceTests
 
         Assert.Equal(0, deletedCount);
     }
+
+    // Regression test for the bug RunAsync's dedupe fix could otherwise reintroduce: an email
+    // that's still in the inbox (so it's skipped rather than re-inserted) must have its
+    // RunDate carried forward, or this delete sweep removes it even though it's still current.
+    [Fact]
+    public async Task CarryForward_PreventsDeleteOldEmailsAsync_FromRemovingAStillInboxedEmail()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        var yesterday = new DateOnly(2026, 9, 29);
+        var today = new DateOnly(2026, 9, 30);
+
+        await SeedAsync(factory, MakeItem(yesterday, "still-in-inbox"));
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var existing = await db.Digests.SingleAsync(d => d.GmailMessageId == "still-in-inbox");
+        existing.CarryForward(today);
+        await db.SaveChangesAsync();
+
+        var digests = scope.ServiceProvider.GetRequiredService<DigestsService>();
+        var deletedCount = await digests.DeleteOldEmailsAsync(today);
+
+        Assert.Equal(0, deletedCount);
+        Assert.Equal(today, (await db.Digests.SingleAsync()).RunDate);
+    }
 }
